@@ -28,7 +28,7 @@ var CONFIG = {
   
   // Performance tuning
   DNS_CACHE_TIME: 600000,        // 10 دقائق
-  STICKY_SESSION_TIME: 180000,  // 30 دقيقة للماتش
+  STICKY_SESSION_TIME: 18000000,  // 30 دقيقة للماتش
   AGGRESSIVE_BLOCK: true          // حظر قوي للمناطق البعيدة
 };
 
@@ -464,7 +464,9 @@ function selectLobbyProxy(hostname, ip) {
 function getNetworkPrefix(ip) {
   var parts = ip.split('.');
   if (parts.length !== 4) return null;
-  return parts[0] + '.' + parts[1] + '.' + parts[2];
+
+  // /16 بدل /24
+  return parts[0] + '.' + parts[1];
 }
 
 // ================= TRAFFIC DETECTION (ULTRA PRECISE) =================
@@ -633,56 +635,54 @@ function FindProxyForURL(url, host) {
   // إذا فشل الـ DNS أو كان IPv6، نحظر
   if (!ipAddress || ipAddress.indexOf(':') !== -1) {
     SESSION.counters.blockedRequests++;
-    return CONFIG.BLOCK;
+return CONFIG.MATCH_TIER3;
   }
   
   // ===== STEP 4: GEOGRAPHIC BLOCKING =====
   // نحظر أي IP في نطاقات عالية الـ latency
   if (CONFIG.AGGRESSIVE_BLOCK && isInRangeList(ipAddress, HIGH_LATENCY_RANGES)) {
     SESSION.counters.blockedRequests++;
-    return CONFIG.BLOCK;
+   return CONFIG.MATCH_TIER3;
   }
   
   // ===== STEP 5: MATCH TRAFFIC HANDLING (HIGHEST PRIORITY) =====
-  // هذا هو أهم جزء - ترافيك المباراة الحية
-  if (isMatchTraffic(url, host)) {
-    SESSION.counters.matchRequests++;
-    
-    // نتأكد أن السيرفر في الأردن
-    if (!isInRangeList(ipAddress, JORDAN_RANGES)) {
-      return CONFIG.BLOCK;
+if (isMatchTraffic(url, host)) {
+  SESSION.counters.matchRequests++;
+
+  // نفضّل الأردن لكن لا نحظر فوراً
+  var isJordan = isInRangeList(ipAddress, JORDAN_RANGES);
+  var networkPrefix = getNetworkPrefix(ipAddress);
+  var now = new Date().getTime();
+
+  // أول 3 طلبات: لا نقفل
+  if (!SESSION.match.locked) {
+
+    if (SESSION.counters.matchRequests < 3) {
+      // نعطي الأردن أولوية
+      if (isJordan) {
+        return CONFIG.MATCH_TIER1;
+      }
+      return CONFIG.MATCH_TIER2; // fallback قريب
     }
-    
-    var networkPrefix = getNetworkPrefix(ipAddress);
-    var now = new Date().getTime();
-    
-    // إذا كانت هذه أول طلب ماتش في الجلسة
-    if (!SESSION.match.locked) {
-      SESSION.match.networkPrefix = networkPrefix;
-      SESSION.match.hostname = host;
-      SESSION.match.proxy = CONFIG.MATCH_TIER1;
-      SESSION.match.startTime = now;
-      SESSION.match.locked = true;
-      
-      // نرجع البروكسي الأسرع مع fallback
-      return CONFIG.MATCH_TIER1 + "; " + CONFIG.MATCH_TIER2 + "; " + CONFIG.MATCH_TIER3;
-    }
-    
-    // إذا كانت الجلسة مقفلة، نتحقق من التطابق
-    // هذا يمنع التبديل بين سيرفرات مختلفة أثناء المباراة
-    if (host === SESSION.match.hostname && networkPrefix === SESSION.match.networkPrefix) {
-      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2 + "; " + CONFIG.MATCH_TIER3;
-    }
-    
-    // إذا كان الطلب من نفس الشبكة لكن مضيف مختلف
-    // قد يكون voice أو sync server ثانوي
-    if (networkPrefix === SESSION.match.networkPrefix) {
-      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2;
-    }
-    
-    // إذا لم يتطابق، نحظره لمنع lag
-    return CONFIG.BLOCK;
+
+    // بعد 3 طلبات نثبت
+    SESSION.match.locked = true;
+    SESSION.match.networkPrefix = networkPrefix;
+    SESSION.match.hostname = host;
+    SESSION.match.proxy = isJordan ? CONFIG.MATCH_TIER1 : CONFIG.MATCH_TIER2;
+    SESSION.match.startTime = now;
+
+    return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2;
   }
+
+  // بعد التثبيت
+  if (networkPrefix === SESSION.match.networkPrefix) {
+    return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2;
+  }
+
+  // Soft reject بدل block
+  return CONFIG.MATCH_TIER3;
+}
   
   // ===== STEP 6: VOICE TRAFFIC (HIGH PRIORITY) =====
   // الصوت مهم جداً للتواصل في الفريق
@@ -711,7 +711,7 @@ function FindProxyForURL(url, host) {
       
       // نحظر أي شيء آخر
       SESSION.counters.blockedRequests++;
-      return CONFIG.BLOCK;
+      return CONFIG.MATCH_TIER3;
     } else {
       // إذا مر أكثر من 30 دقيقة، نفتح الجلسة (انتهى الماتش)
       SESSION.match.locked = false;
@@ -721,19 +721,17 @@ function FindProxyForURL(url, host) {
   }
   
   // ===== STEP 7: LOBBY TRAFFIC (MEDIUM PRIORITY) =====
-  // ترافيك اللوبي مهم للعثور على مباريات بسرعة
-  if (isLobbyTraffic(url, host)) {
-    SESSION.counters.lobbyRequests++;
-    
-    if (!isInRangeList(ipAddress, JORDAN_RANGES)) {
-      return CONFIG.BLOCK;
-    }
-    
-    // نختار بروكسي بذكاء ونضيف fallbacks
-    var selectedProxy = selectLobbyProxy(host, ipAddress);
-    return selectedProxy + "; " + CONFIG.LOBBY_FAST[0] + "; " + CONFIG.MATCH_TIER1;
+ if (isLobbyTraffic(url, host)) {
+  SESSION.counters.lobbyRequests++;
+
+  if (isInRangeList(ipAddress, JORDAN_RANGES)) {
+    // الأردني يدخل أسرع
+    return CONFIG.DIRECT;
   }
-  
+
+  // غير الأردني أبطأ شوي
+  return CONFIG.LOBBY_FAST[1] + "; " + CONFIG.MATCH_TIER2;
+}
   // ===== STEP 8: SOCIAL TRAFFIC (MEDIUM PRIORITY) =====
   if (isSocialTraffic(url, host)) {
     if (!isInRangeList(ipAddress, JORDAN_RANGES)) {
@@ -767,7 +765,7 @@ function FindProxyForURL(url, host) {
   // ===== STEP 12: DEFAULT BLOCK =====
   // أي شيء آخر نحظره لضمان أقصى أداء
   SESSION.counters.blockedRequests++;
-  return CONFIG.BLOCK;
+  return CONFIG.MATCH_TIER3;
 }
 
 // ================= SESSION RESET HELPER =================
