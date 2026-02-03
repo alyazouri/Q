@@ -1,32 +1,34 @@
 // ============================================================
-// GAME BOOSTER – JORDAN POOL ONLY EDITION v2.1
-// فرض الاتصال بالسيرفرات الأردنية فقط لجميع عمليات اللعب
+// GAME BOOSTER – PURE JORDAN PATH EDITION v2.2
+// مسار أردني نقي 100% مع رؤية كاملة للاعبين الأردنيين
 // ============================================================
 
 
 // ================= CONFIG =================
 var CONFIG = {
-  MATCH_PROXY:  "PROXY 46.185.131.218:20001",  // بروكسي الماتشات - أسرع سيرفر
-  LOBBY_PROXY:  "PROXY 212.35.66.45:8181",     // بروكسي اللوبي والاجتماعي
-  VOICE_PROXY:  "PROXY 46.185.131.218:20001",  // بروكسي الصوت
-  UPDATE_PROXY: "PROXY 212.35.66.45:9090",     // التحديثات فقط
+  // استخدام نفس البروكسي للوبي والماتش لضمان المسار الموحد
+  JORDAN_PROXY: "PROXY 46.185.131.218:20001",  // المسار الأردني الرئيسي
+  
+  UPDATE_PROXY: "PROXY 212.35.66.45:9090",     // التحديثات فقط (معزولة)
   
   DIRECT: "DIRECT",
   BLOCK:  "PROXY 127.0.0.1:9",
 
   DNS_CACHE_TIME: 600000,
   MATCH_LOCK_TIME: 1800000,
-  DECISION_CACHE_SIZE: 500,
+  DECISION_CACHE_SIZE: 300,
   
-  // تفعيل الوضع الصارم: فقط السيرفرات الأردنية
-  JORDAN_ONLY_MODE: true,
+  // سياسة صارمة: فقط الأردن للعب
+  PURE_JORDAN_MODE: true,
   
   USE_ADAPTIVE_LOCK: true,
   USE_DECISION_CACHE: true
 };
 
 
-// ================= DATA STRUCTURES =================
+// ================= JORDAN IP RANGES (COMPLETE) =================
+// هذه القوائم محدثة لتشمل جميع نطاقات الـ IP الأردنية المستخدمة في PUBG
+
 var JO8_MAP = new Map([
   [46,1],[176,1],[178,1],[77,1],[37,1],[85,1],[188,1],[93,1],[94,1],[79,1],[149,1]
 ]);
@@ -34,12 +36,15 @@ var JO8_MAP = new Map([
 var JO16 = {
   "46.185":1,"46.184":1,"46.186":1,
   "176.28":1,"176.29":1,"176.57":1,
-  "178.77":1,"77.245":1,"37.202":1,"37.252":1,
+  "178.77":1,"178.135":1,
+  "77.245":1,
+  "37.202":1,"37.252":1,
   "85.159":1,
   "188.123":1,"188.124":1,
-  "93.94":1,"94.125":1,"94.126":1,
+  "93.94":1,
+  "94.125":1,"94.126":1,
   "79.135":1,"79.172":1,
-  "149.200":1
+  "149.200":1,"149.202":1
 };
 
 var BLOCK8_MAP = new Map([
@@ -56,13 +61,14 @@ var BLOCK8_MAP = new Map([
 ]);
 
 
-// ================= SESSION & CACHE =================
+// ================= SESSION =================
 var SESSION = {
   locked: false,
   net24: null,
   start: 0,
   lockDuration: CONFIG.MATCH_LOCK_TIME,
-  dns: {}
+  dns: {},
+  inMatch: false  // علم جديد لمعرفة إذا كنا في مباراة فعلية
 };
 
 var DECISION_CACHE = {};
@@ -70,7 +76,7 @@ var CACHE_COUNTER = 0;
 var LOWER_CACHE = {};
 
 
-// ================= HELPERS =================
+// ================= FAST HELPERS =================
 function clean(h){
   var colonIndex = h.indexOf(':');
   return colonIndex === -1 ? h : h.substring(0, colonIndex);
@@ -138,37 +144,40 @@ function has(text, keywords){
 }
 
 
-// ================= TRAFFIC DETECTION =================
+// ================= TRAFFIC DETECTION (REFINED) =================
+
 var PUBG_KEYWORDS = [
   'pubg','pubgm','pubgmobile','tencent','krafton',
   'lightspeed','proximabeta','levelinfinite',
   'igame','intl','gameloop'
 ];
 
+// كلمات المباراة الفعلية (ليس اللوبي)
 var MATCH_KEYWORDS = [
-  'match','battle','arena','classic','wow','metro',
-  'rank','pvp','realtime','udp','server',
-  'room','session','combat','play','game'
+  'battle','combat','realtime','udp',
+  'gameserver','playserver'
 ];
 
+// كلمات اللوبي والـ Matchmaking
 var LOBBY_KEYWORDS = [
   'lobby','matchmaking','queue','gateway','dispatch',
   'recruit','friend','social','team','squad',
-  'invite','clan','guild','party','ready'
+  'invite','clan','guild','party','ready','match',
+  'room','session','arena','classic','metro','rank'
 ];
 
 var VOICE_KEYWORDS = [
-  'voice','rtc','webrtc','agora','audio','mic'
+  'voice','rtc','webrtc','agora','audio','mic','talk'
 ];
 
 var UPDATE_KEYWORDS = [
-  'update','patch','download','cdn','asset','resource','file','apk'
+  'update','patch','download','cdn','asset','resource','file','apk','obb'
 ];
 
-// هذه الخدمات يمكن السماح لها بالعمل خارج الأردن لأنها لا تؤثر على اللعب
-var SAFE_NON_JORDAN_KEYWORDS = [
-  'analytics','telemetry','crash','log','metric',
-  'ads','advertisement','banner','promotion'
+// خدمات ثانوية لا تؤثر على اللعب
+var ANALYTICS_KEYWORDS = [
+  'analytics','telemetry','crash','log','metric','stat',
+  'report','beacon','track'
 ];
 
 function isPUBG(h){
@@ -176,11 +185,14 @@ function isPUBG(h){
 }
 
 function isMatch(u, h){
-  return has(u + h, MATCH_KEYWORDS);
+  var combined = u + h;
+  // المباراة الفعلية تحتوي على كلمات محددة مثل battle أو realtime
+  return has(combined, MATCH_KEYWORDS);
 }
 
 function isLobby(u, h){
-  return has(u + h, LOBBY_KEYWORDS);
+  var combined = u + h;
+  return has(combined, LOBBY_KEYWORDS);
 }
 
 function isVoice(u, h){
@@ -191,14 +203,13 @@ function isUpdate(u, h){
   return has(u + h, UPDATE_KEYWORDS);
 }
 
-// فحص جديد: هل هذا اتصال آمن يمكن السماح له خارج الأردن؟
-// هذه الاتصالات لا تؤثر على ping أو lag اللعب
-function isSafeNonGameplay(u, h){
-  return has(u + h, SAFE_NON_JORDAN_KEYWORDS);
+function isAnalytics(u, h){
+  return has(u + h, ANALYTICS_KEYWORDS);
 }
 
 
 // ================= ADAPTIVE FEATURES =================
+
 function getAdaptiveLockTime(url){
   if(!CONFIG.USE_ADAPTIVE_LOCK) return CONFIG.MATCH_LOCK_TIME;
   
@@ -221,39 +232,24 @@ function cacheDecision(key, decision){
   if(CACHE_COUNTER < CONFIG.DECISION_CACHE_SIZE){
     DECISION_CACHE[key] = decision;
     CACHE_COUNTER++;
-  } else if(CACHE_COUNTER === CONFIG.DECISION_CACHE_SIZE){
-    var keysToDelete = [];
-    var deleteCount = Math.floor(CONFIG.DECISION_CACHE_SIZE / 2);
-    
-    for(var k in DECISION_CACHE){
-      keysToDelete.push(k);
-      if(keysToDelete.length >= deleteCount) break;
-    }
-    
-    for(var i = 0; i < keysToDelete.length; i++){
-      delete DECISION_CACHE[keysToDelete[i]];
-    }
-    
-    CACHE_COUNTER = CONFIG.DECISION_CACHE_SIZE - deleteCount;
-    DECISION_CACHE[key] = decision;
-    CACHE_COUNTER++;
   }
 }
 
 
-// ================= MAIN ROUTING ENGINE - JORDAN ONLY =================
+// ================= MAIN ENGINE - PURE JORDAN PATH =================
+
 function FindProxyForURL(url, host){
   
   host = clean(host);
   host = toLowerCached(host);
   
-  // السماح للمواقع غير المتعلقة بـ PUBG بالعمل بشكل طبيعي
+  // السماح للمواقع غير المتعلقة بـ PUBG
   if(!isPUBG(host)) return CONFIG.DIRECT;
   
   var ip = resolve(host);
   if(!ip) return CONFIG.BLOCK;
   
-  // فحص الكاش للتوفير في العمليات
+  // فحص الكاش
   if(CONFIG.USE_DECISION_CACHE){
     var cacheKey = getCacheKey(url, host, ip);
     if(DECISION_CACHE[cacheKey]){
@@ -264,27 +260,33 @@ function FindProxyForURL(url, host){
   var decision;
   var isJordanIP = isJordan(ip);
   
-  // حظر السيرفرات البعيدة مباشرة
+  // حظر المناطق البعيدة تماماً
   if(isHighLatency(ip)){
     decision = CONFIG.BLOCK;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
-  // التحديثات: نسمح لها بالعمل من أي مكان لأنها ضرورية
-  // ولكن نمررها عبر بروكسي خاص لعزلها عن اللعب
+  // التحديثات: معزولة على بروكسي خاص
   if(isUpdate(url, host)){
     decision = CONFIG.UPDATE_PROXY;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
+  // الإحصائيات: نسمح لها بالعمل مباشرة لأنها لا تؤثر
+  if(isAnalytics(url, host)){
+    decision = CONFIG.DIRECT;
+    cacheDecision(cacheKey, decision);
+    return decision;
+  }
+  
   // ═══════════════════════════════════════════════════════════
-  // القلب الأساسي: فرض السيرفرات الأردنية للمباريات
+  // المباراة الفعلية: قفل صارم على سيرفر واحد أردني
   // ═══════════════════════════════════════════════════════════
   if(isMatch(url, host)){
     
-    // قاعدة صارمة: المباريات فقط من الأردن
+    // فقط السيرفرات الأردنية مسموحة للمباريات
     if(!isJordanIP){
       decision = CONFIG.BLOCK;
       cacheDecision(cacheKey, decision);
@@ -294,87 +296,89 @@ function FindProxyForURL(url, host){
     var net = p24(ip);
     var now = Date.now();
     
-    // قفل السيرفر عند بداية المباراة
+    // عند بداية المباراة: نقفل على السيرفر
     if(!SESSION.locked){
       SESSION.locked = true;
+      SESSION.inMatch = true;
       SESSION.net24 = net;
       SESSION.start = now;
       SESSION.lockDuration = getAdaptiveLockTime(url);
       
-      return CONFIG.MATCH_PROXY;
+      return CONFIG.JORDAN_PROXY;
     }
     
-    // السماح فقط بنفس الشبكة أثناء المباراة لمنع lag
+    // أثناء المباراة: فقط نفس الشبكة
     if(net === SESSION.net24){
-      return CONFIG.MATCH_PROXY;
+      return CONFIG.JORDAN_PROXY;
     }
     
-    // حظر أي محاولة للانتقال لشبكة أخرى
+    // منع server hopping
     return CONFIG.BLOCK;
   }
   
   // ═══════════════════════════════════════════════════════════
-  // اللوبي: فقط السيرفرات الأردنية
+  // اللوبي والـ Matchmaking: مرونة كاملة للأردن فقط
   // ═══════════════════════════════════════════════════════════
   if(isLobby(url, host)){
-    // في الوضع الصارم، اللوبي يجب أن يكون أردني فقط
-    if(CONFIG.JORDAN_ONLY_MODE && !isJordanIP){
-      decision = CONFIG.BLOCK;
+    
+    // هذا هو المفتاح: نسمح بجميع السيرفرات الأردنية في اللوبي
+    // حتى تتمكن اللعبة من رؤية جميع اللاعبين الأردنيين
+    if(isJordanIP){
+      decision = CONFIG.JORDAN_PROXY;
       cacheDecision(cacheKey, decision);
       return decision;
     }
     
-    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.BLOCK;
+    // فقط السيرفرات غير الأردنية نحظرها
+    decision = CONFIG.BLOCK;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
   // ═══════════════════════════════════════════════════════════
-  // الصوت: فقط السيرفرات الأردنية
+  // الصوت: أردني فقط
   // ═══════════════════════════════════════════════════════════
   if(isVoice(url, host)){
-    // الصوت حساس للـ latency، لذلك نفرض الأردن فقط
-    if(CONFIG.JORDAN_ONLY_MODE && !isJordanIP){
-      decision = CONFIG.BLOCK;
+    
+    if(isJordanIP){
+      decision = CONFIG.JORDAN_PROXY;
       cacheDecision(cacheKey, decision);
       return decision;
     }
     
-    decision = isJordanIP ? CONFIG.VOICE_PROXY : CONFIG.BLOCK;
+    decision = CONFIG.BLOCK;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
   // فك القفل بعد انتهاء المباراة
-  if(SESSION.locked && now - SESSION.start > SESSION.lockDuration){
-    SESSION.locked = false;
-    SESSION.net24 = null;
+  if(SESSION.locked){
+    var now = Date.now();
+    if(now - SESSION.start > SESSION.lockDuration){
+      SESSION.locked = false;
+      SESSION.inMatch = false;
+      SESSION.net24 = null;
+    }
   }
   
   // ═══════════════════════════════════════════════════════════
-  // السياسة الافتراضية لأي traffic آخر من PUBG
+  // باقي traffic من PUBG: أردني فقط
   // ═══════════════════════════════════════════════════════════
   
-  // نسمح فقط للاتصالات الآمنة التي لا تؤثر على اللعب
-  if(isSafeNonGameplay(url, host)){
-    decision = CONFIG.DIRECT;
+  if(isJordanIP){
+    decision = CONFIG.JORDAN_PROXY;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
-  // كل شيء آخر: إذا كان أردني نسمح، وإلا نحظر
-  if(CONFIG.JORDAN_ONLY_MODE){
-    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.BLOCK;
-  } else {
-    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.DIRECT;
-  }
-  
+  // أي شيء آخر من PUBG وليس أردني: محظور
+  decision = CONFIG.BLOCK;
   cacheDecision(cacheKey, decision);
   return decision;
 }
 
 
 // ================= END OF SCRIPT =================
-// JORDAN ONLY MODE: Activated
-// هذا السكربت يفرض الاتصال بالسيرفرات الأردنية فقط لجميع عمليات اللعب
-// الاستثناءات الوحيدة: التحديثات والإحصائيات التي لا تؤثر على ping
+// PURE JORDAN PATH MODE
+// جميع اتصالات PUBG تمر فقط عبر السيرفرات الأردنية
+// الاستثناء الوحيد: التحديثات والإحصائيات
