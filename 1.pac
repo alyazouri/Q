@@ -1,39 +1,36 @@
 // ============================================================
-// GAME BOOSTER – ZERO LAG TARGET EDITION v2.0
-// محسّن بالكامل للأداء العالي وأقل استهلاك للموارد
-// التحسينات: Map structures, Early exits, Smart caching, DNS optimization
+// GAME BOOSTER – JORDAN POOL ONLY EDITION v2.1
+// فرض الاتصال بالسيرفرات الأردنية فقط لجميع عمليات اللعب
 // ============================================================
 
 
 // ================= CONFIG =================
 var CONFIG = {
-  MATCH_PROXY:  "PROXY 46.185.131.218:20001",
-  LOBBY_PROXY:  "PROXY 212.35.66.45:8181",
-  VOICE_PROXY:  "PROXY 46.185.131.218:20001",
-  UPDATE_PROXY: "PROXY 212.35.66.45:9090",
-
+  MATCH_PROXY:  "PROXY 46.185.131.218:20001",  // بروكسي الماتشات - أسرع سيرفر
+  LOBBY_PROXY:  "PROXY 212.35.66.45:8181",     // بروكسي اللوبي والاجتماعي
+  VOICE_PROXY:  "PROXY 46.185.131.218:20001",  // بروكسي الصوت
+  UPDATE_PROXY: "PROXY 212.35.66.45:9090",     // التحديثات فقط
+  
   DIRECT: "DIRECT",
   BLOCK:  "PROXY 127.0.0.1:9",
 
-  DNS_CACHE_TIME: 600000,      // 10 دقائق
-  MATCH_LOCK_TIME: 1800000,    // 30 دقيقة
-  DECISION_CACHE_SIZE: 500,    // حد الكاش للقرارات
+  DNS_CACHE_TIME: 600000,
+  MATCH_LOCK_TIME: 1800000,
+  DECISION_CACHE_SIZE: 500,
   
-  // تفعيل الميزات المتقدمة
+  // تفعيل الوضع الصارم: فقط السيرفرات الأردنية
+  JORDAN_ONLY_MODE: true,
+  
   USE_ADAPTIVE_LOCK: true,
   USE_DECISION_CACHE: true
 };
 
 
-// ================= OPTIMIZED DATA STRUCTURES =================
-// استخدمنا Map بدلاً من Object لأن Map أسرع في البحث خاصة مع المفاتيح الرقمية
-// Map يحافظ على نوع البيانات ولا يحولها لنصوص مثل Object
-
+// ================= DATA STRUCTURES =================
 var JO8_MAP = new Map([
   [46,1],[176,1],[178,1],[77,1],[37,1],[85,1],[188,1],[93,1],[94,1],[79,1],[149,1]
 ]);
 
-// JO16 باقي كـ Object لأن المفاتيح نصية أصلاً (مثل "46.185")
 var JO16 = {
   "46.185":1,"46.184":1,"46.186":1,
   "176.28":1,"176.29":1,"176.57":1,
@@ -64,43 +61,32 @@ var SESSION = {
   locked: false,
   net24: null,
   start: 0,
-  lockDuration: CONFIG.MATCH_LOCK_TIME,  // يمكن تعديله ديناميكياً
-  dns: {}  // DNS cache مع timestamp
+  lockDuration: CONFIG.MATCH_LOCK_TIME,
+  dns: {}
 };
 
-// كاش للقرارات المتكررة - يوفر آلاف العمليات الحسابية
 var DECISION_CACHE = {};
 var CACHE_COUNTER = 0;
-
-// كاش لتحويل النصوص لـ lowercase - يمنع التحويل المتكرر لنفس النصوص
 var LOWER_CACHE = {};
 
 
-// ================= ULTRA-FAST HELPERS =================
-
-// تنظيف الـ host من رقم المنفذ إن وجد
-// مثال: example.com:443 يصبح example.com
+// ================= HELPERS =================
 function clean(h){
   var colonIndex = h.indexOf(':');
   return colonIndex === -1 ? h : h.substring(0, colonIndex);
 }
 
-// استخراج أول 16 بت من IP (مثل "46.185" من "46.185.131.218")
 function p16(ip){
   var firstDot = ip.indexOf('.');
   var secondDot = ip.indexOf('.', firstDot + 1);
   return ip.substring(0, secondDot);
 }
 
-// استخراج أول 24 بت من IP (مثل "46.185.131" من "46.185.131.218")
-// هذا يستخدم لتحديد الشبكة الفرعية الدقيقة للسيرفر
 function p24(ip){
   var parts = ip.split('.');
   return parts[0] + "." + parts[1] + "." + parts[2];
 }
 
-// تحويل النص لـ lowercase مع كاش لتجنب التحويل المتكرر
-// هذا التحسين يوفر الكثير من العمليات لأن toLowerCase بطيئة نسبياً
 function toLowerCached(str){
   if(!LOWER_CACHE[str]){
     LOWER_CACHE[str] = str.toLowerCase();
@@ -108,59 +94,43 @@ function toLowerCached(str){
   return LOWER_CACHE[str];
 }
 
-// فحص محسّن: هل الـ IP أردني؟
-// التحسين: نفحص الـ octet الأول أولاً (عملية سريعة جداً)
-// فقط إذا نجح نفحص الـ /16 prefix
 function isJordan(ip){
   var firstDot = ip.indexOf('.');
   var firstOctet = parseInt(ip.substring(0, firstDot), 10);
   
-  // Early exit: إذا الـ octet الأول مش أردني، نوقف فوراً
   if(!JO8_MAP.has(firstOctet)) return false;
   
-  // الآن نفحص الـ /16 prefix
   var prefix16 = p16(ip);
   return JO16[prefix16] === 1;
 }
 
-// فحص: هل الـ IP من مناطق بطيئة؟
-// محسّن باستخدام parseInt مرة واحدة و Map للبحث السريع
 function isHighLatency(ip){
   var firstDot = ip.indexOf('.');
   var firstOctet = parseInt(ip.substring(0, firstDot), 10);
   return BLOCK8_MAP.has(firstOctet);
 }
 
-// DNS Resolution مع كاش ذكي
-// يحفظ النتائج لمدة 10 دقائق لتجنب DNS queries المتكررة
 function resolve(host){
   var now = Date.now();
   var cached = SESSION.dns[host];
   
-  // إذا موجود في الكاش وما انتهت صلاحيته، نرجعه مباشرة
   if(cached && now - cached.t < CONFIG.DNS_CACHE_TIME){
     return cached.ip;
   }
 
-  // نحل الـ DNS ونحفظه في الكاش
   var ip = dnsResolve(host);
   
-  // نتأكد أن النتيجة IPv4 صحيحة (مش IPv6 أو خطأ)
   if(ip && ip.indexOf(':') === -1){
     SESSION.dns[host] = {ip: ip, t: now};
     return ip;
   }
   
-  // إذا فشل الحل ولكن عندنا كاش قديم، نستخدمه
   return cached ? cached.ip : null;
 }
 
-// البحث عن كلمات مفتاحية في النص
-// محسّن باستخدام some التي توقف البحث فوراً عند إيجاد أول تطابق
 function has(text, keywords){
   text = toLowerCached(text);
   
-  // some أسرع من loop عادي لأنها توقف عند أول true
   for(var i = 0; i < keywords.length; i++){
     if(text.indexOf(keywords[i]) !== -1) return true;
   }
@@ -168,9 +138,7 @@ function has(text, keywords){
 }
 
 
-// ================= TRAFFIC DETECTION (OPTIMIZED) =================
-
-// الكلمات المفتاحية محفوظة كمصفوفات ثابتة لتجنب إنشائها في كل مرة
+// ================= TRAFFIC DETECTION =================
 var PUBG_KEYWORDS = [
   'pubg','pubgm','pubgmobile','tencent','krafton',
   'lightspeed','proximabeta','levelinfinite',
@@ -180,7 +148,7 @@ var PUBG_KEYWORDS = [
 var MATCH_KEYWORDS = [
   'match','battle','arena','classic','wow','metro',
   'rank','pvp','realtime','udp','server',
-  'room','session','combat','play'
+  'room','session','combat','play','game'
 ];
 
 var LOBBY_KEYWORDS = [
@@ -194,7 +162,13 @@ var VOICE_KEYWORDS = [
 ];
 
 var UPDATE_KEYWORDS = [
-  'update','patch','download','cdn','asset','resource','file'
+  'update','patch','download','cdn','asset','resource','file','apk'
+];
+
+// هذه الخدمات يمكن السماح لها بالعمل خارج الأردن لأنها لا تؤثر على اللعب
+var SAFE_NON_JORDAN_KEYWORDS = [
+  'analytics','telemetry','crash','log','metric',
+  'ads','advertisement','banner','promotion'
 ];
 
 function isPUBG(h){
@@ -217,40 +191,30 @@ function isUpdate(u, h){
   return has(u + h, UPDATE_KEYWORDS);
 }
 
+// فحص جديد: هل هذا اتصال آمن يمكن السماح له خارج الأردن؟
+// هذه الاتصالات لا تؤثر على ping أو lag اللعب
+function isSafeNonGameplay(u, h){
+  return has(u + h, SAFE_NON_JORDAN_KEYWORDS);
+}
+
 
 // ================= ADAPTIVE FEATURES =================
-
-// تحديد وقت القفل حسب نوع الماتش
-// الماتشات الطويلة تحتاج قفل أطول لضمان عدم تغيير السيرفر
 function getAdaptiveLockTime(url){
   if(!CONFIG.USE_ADAPTIVE_LOCK) return CONFIG.MATCH_LOCK_TIME;
   
   var lowerUrl = toLowerCached(url);
   
-  // Classic mode: ماتشات طويلة (30-35 دقيقة)
   if(lowerUrl.indexOf('classic') !== -1) return 2100000;
-  
-  // Metro/Arena: ماتشات قصيرة (10-15 دقيقة)
-  if(lowerUrl.indexOf('metro') !== -1 || lowerUrl.indexOf('arena') !== -1){
-    return 900000;
-  }
-  
-  // TDM/Quick Match: ماتشات سريعة جداً (5-8 دقائق)
-  if(lowerUrl.indexOf('tdm') !== -1 || lowerUrl.indexOf('quick') !== -1){
-    return 480000;
-  }
+  if(lowerUrl.indexOf('metro') !== -1 || lowerUrl.indexOf('arena') !== -1) return 900000;
+  if(lowerUrl.indexOf('tdm') !== -1 || lowerUrl.indexOf('quick') !== -1) return 480000;
   
   return CONFIG.MATCH_LOCK_TIME;
 }
 
-// إنشاء مفتاح فريد للكاش من URL و Host و IP
-// نأخذ أول 60 حرف من URL لتقليل حجم المفتاح
 function getCacheKey(url, host, ip){
   return url.substring(0, 60) + '|' + host + '|' + ip;
 }
 
-// تخزين القرار في الكاش مع حد أقصى للحجم
-// هذا يمنع استهلاك الذاكرة بشكل مفرط
 function cacheDecision(key, decision){
   if(!CONFIG.USE_DECISION_CACHE) return;
   
@@ -258,7 +222,6 @@ function cacheDecision(key, decision){
     DECISION_CACHE[key] = decision;
     CACHE_COUNTER++;
   } else if(CACHE_COUNTER === CONFIG.DECISION_CACHE_SIZE){
-    // عند امتلاء الكاش، نحذف نصفه لإفساح المجال لقرارات جديدة
     var keysToDelete = [];
     var deleteCount = Math.floor(CONFIG.DECISION_CACHE_SIZE / 2);
     
@@ -278,24 +241,19 @@ function cacheDecision(key, decision){
 }
 
 
-// ================= MAIN ROUTING ENGINE =================
-
+// ================= MAIN ROUTING ENGINE - JORDAN ONLY =================
 function FindProxyForURL(url, host){
   
-  // الخطوة 1: تنظيف وتحويل الـ host
   host = clean(host);
   host = toLowerCached(host);
   
-  // الخطوة 2: فحص سريع - هل هذا PUBG أصلاً؟
-  // هذا أسرع فحص ممكن، إذا فشل نرجع DIRECT فوراً
+  // السماح للمواقع غير المتعلقة بـ PUBG بالعمل بشكل طبيعي
   if(!isPUBG(host)) return CONFIG.DIRECT;
   
-  // الخطوة 3: حل DNS (مع استخدام الكاش)
   var ip = resolve(host);
   if(!ip) return CONFIG.BLOCK;
   
-  // الخطوة 4: فحص الكاش للقرارات المتكررة
-  // هذا يوفر كل الفحوصات التالية إذا كان القرار محفوظ
+  // فحص الكاش للتوفير في العمليات
   if(CONFIG.USE_DECISION_CACHE){
     var cacheKey = getCacheKey(url, host, ip);
     if(DECISION_CACHE[cacheKey]){
@@ -304,29 +262,30 @@ function FindProxyForURL(url, host){
   }
   
   var decision;
+  var isJordanIP = isJordan(ip);
   
-  // الخطوة 5: منع السيرفرات البعيدة (عالية الـ latency)
-  // هذا فحص سريع جداً ويوفر الكثير من المشاكل
+  // حظر السيرفرات البعيدة مباشرة
   if(isHighLatency(ip)){
     decision = CONFIG.BLOCK;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
-  // الخطوة 6: التحديثات (معزولة تماماً)
-  // نفصلها على بروكسي خاص لأنها تستهلك bandwidth كبير
+  // التحديثات: نسمح لها بالعمل من أي مكان لأنها ضرورية
+  // ولكن نمررها عبر بروكسي خاص لعزلها عن اللعب
   if(isUpdate(url, host)){
     decision = CONFIG.UPDATE_PROXY;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
-  // الخطوة 7: MATCH TRAFFIC - أعلى أولوية (Anti-Lag Core)
-  // هنا القلب النابض للسكربت - نضمن استقرار الاتصال طوال الماتش
+  // ═══════════════════════════════════════════════════════════
+  // القلب الأساسي: فرض السيرفرات الأردنية للمباريات
+  // ═══════════════════════════════════════════════════════════
   if(isMatch(url, host)){
     
-    // نقبل فقط السيرفرات الأردنية للماتشات
-    if(!isJordan(ip)){
+    // قاعدة صارمة: المباريات فقط من الأردن
+    if(!isJordanIP){
       decision = CONFIG.BLOCK;
       cacheDecision(cacheKey, decision);
       return decision;
@@ -335,65 +294,87 @@ function FindProxyForURL(url, host){
     var net = p24(ip);
     var now = Date.now();
     
-    // قفل السيرفر عند أول اتصال في الماتش
+    // قفل السيرفر عند بداية المباراة
     if(!SESSION.locked){
       SESSION.locked = true;
       SESSION.net24 = net;
       SESSION.start = now;
       SESSION.lockDuration = getAdaptiveLockTime(url);
       
-      decision = CONFIG.MATCH_PROXY;
-      // لا نكاش قرارات الماتش لأنها حساسة ومتغيرة
-      return decision;
+      return CONFIG.MATCH_PROXY;
     }
     
-    // أثناء الماتش: نسمح فقط بنفس الشبكة الفرعية
-    // هذا يمنع server hopping الذي يسبب lag مفاجئ
+    // السماح فقط بنفس الشبكة أثناء المباراة لمنع lag
     if(net === SESSION.net24){
       return CONFIG.MATCH_PROXY;
     }
     
-    // منع أي محاولة للاتصال بشبكة أخرى = حماية من الـ lag
-    decision = CONFIG.BLOCK;
-    return decision;
+    // حظر أي محاولة للانتقال لشبكة أخرى
+    return CONFIG.BLOCK;
   }
   
-  // الخطوة 8: Voice Chat (الصوت)
-  if(isVoice(url, host)){
-    decision = isJordan(ip) ? CONFIG.VOICE_PROXY : CONFIG.DIRECT;
-    cacheDecision(cacheKey, decision);
-    return decision;
-  }
-  
-  // الخطوة 9: Lobby & Social (اللوبي والميزات الاجتماعية)
+  // ═══════════════════════════════════════════════════════════
+  // اللوبي: فقط السيرفرات الأردنية
+  // ═══════════════════════════════════════════════════════════
   if(isLobby(url, host)){
-    decision = isJordan(ip) ? CONFIG.LOBBY_PROXY : CONFIG.DIRECT;
+    // في الوضع الصارم، اللوبي يجب أن يكون أردني فقط
+    if(CONFIG.JORDAN_ONLY_MODE && !isJordanIP){
+      decision = CONFIG.BLOCK;
+      cacheDecision(cacheKey, decision);
+      return decision;
+    }
+    
+    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.BLOCK;
     cacheDecision(cacheKey, decision);
     return decision;
   }
   
-  // الخطوة 10: فك القفل بعد انتهاء الماتش
-  // نفحص إذا مضى الوقت المحدد ونفك القفل تلقائياً
+  // ═══════════════════════════════════════════════════════════
+  // الصوت: فقط السيرفرات الأردنية
+  // ═══════════════════════════════════════════════════════════
+  if(isVoice(url, host)){
+    // الصوت حساس للـ latency، لذلك نفرض الأردن فقط
+    if(CONFIG.JORDAN_ONLY_MODE && !isJordanIP){
+      decision = CONFIG.BLOCK;
+      cacheDecision(cacheKey, decision);
+      return decision;
+    }
+    
+    decision = isJordanIP ? CONFIG.VOICE_PROXY : CONFIG.BLOCK;
+    cacheDecision(cacheKey, decision);
+    return decision;
+  }
+  
+  // فك القفل بعد انتهاء المباراة
   if(SESSION.locked && now - SESSION.start > SESSION.lockDuration){
     SESSION.locked = false;
     SESSION.net24 = null;
   }
   
-  // الخطوة 11: Default routing لباقي PUBG traffic
-  decision = isJordan(ip) ? CONFIG.LOBBY_PROXY : CONFIG.BLOCK;
-  cacheDecision(cacheKey, decision);
+  // ═══════════════════════════════════════════════════════════
+  // السياسة الافتراضية لأي traffic آخر من PUBG
+  // ═══════════════════════════════════════════════════════════
   
+  // نسمح فقط للاتصالات الآمنة التي لا تؤثر على اللعب
+  if(isSafeNonGameplay(url, host)){
+    decision = CONFIG.DIRECT;
+    cacheDecision(cacheKey, decision);
+    return decision;
+  }
+  
+  // كل شيء آخر: إذا كان أردني نسمح، وإلا نحظر
+  if(CONFIG.JORDAN_ONLY_MODE){
+    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.BLOCK;
+  } else {
+    decision = isJordanIP ? CONFIG.LOBBY_PROXY : CONFIG.DIRECT;
+  }
+  
+  cacheDecision(cacheKey, decision);
   return decision;
 }
 
 
 // ================= END OF SCRIPT =================
-// Performance Notes:
-// - Map structures: ~40% faster lookups for numeric keys
-// - Early exits: ~30% reduction in unnecessary checks
-// - Decision cache: ~60% reduction in repeated calculations
-// - DNS cache: ~90% reduction in DNS queries
-// - Adaptive locking: Better match stability with minimal overhead
-// 
-// Total estimated performance gain: 45-65% faster execution
-// Memory usage: Controlled with cache limits (~50KB max)
+// JORDAN ONLY MODE: Activated
+// هذا السكربت يفرض الاتصال بالسيرفرات الأردنية فقط لجميع عمليات اللعب
+// الاستثناءات الوحيدة: التحديثات والإحصائيات التي لا تؤثر على ping
