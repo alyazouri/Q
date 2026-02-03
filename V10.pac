@@ -726,7 +726,16 @@ function isAnalyticsTraffic(url, hostname) {
 // ================= MAIN ROUTING ENGINE =================
 
 function FindProxyForURL(url, host) {
-  
+    // ===== EXCLUDE YOUTUBE & GITHUB (ALWAYS DIRECT) =====
+  if (
+      shExpMatch(host, "*.youtube.com") ||
+      shExpMatch(host, "*.googlevideo.com") ||
+      shExpMatch(host, "*.youtu.be") ||
+      shExpMatch(host, "*.github.com") ||
+      shExpMatch(host, "*.githubusercontent.com")
+  ) {
+      return CONFIG.DIRECT;
+  }
   // ===== STEP 1: NORMALIZE INPUT =====
   // نقوم بتنظيف الـ host وتحويله للأحرف الصغيرة
   host = cleanHost(host.toLowerCase());
