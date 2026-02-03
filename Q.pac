@@ -28,7 +28,7 @@ var CONFIG = {
   
   // Performance tuning
   DNS_CACHE_TIME: 600000,        // 10 دقائق
-  STICKY_SESSION_TIME: 18000,  // 30 دقيقة للماتش
+  STICKY_SESSION_TIME: null,  // 30 دقيقة للماتش
   AGGRESSIVE_BLOCK: true          // حظر قوي للمناطق البعيدة
 };
 
