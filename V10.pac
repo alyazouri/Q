@@ -846,7 +846,7 @@ function FindProxyForURL(url, host) {
     SESSION.counters.lobbyRequests++;
     
     if (!isInRangeList(ipAddress, JORDAN_RANGES)) {
-      return CONFIG.BLOCK;
+      return CONFIG.MATCH_TIER1;
     }
     
     // نختار بروكسي بذكاء ونضيف fallbacks
@@ -858,7 +858,7 @@ function FindProxyForURL(url, host) {
   if (isSocialTraffic(url, host)) {
     if (!isInRangeList(ipAddress, JORDAN_RANGES)) {
       // Social يمكن أن يكون عالمي، نسمح بـ direct
-      return CONFIG.DIRECT + "; " + CONFIG.LOBBY_FAST[0];
+      return CONFIG.MATCH_TIER1 + "; " + CONFIG.LOBBY_FAST[0];
     }
     
     return selectLobbyProxy(host, ipAddress) + "; " + CONFIG.LOBBY_FAST[0];
