@@ -612,10 +612,33 @@ function isLobbyTraffic(url, hostname) {
   var combined = (url + hostname).toLowerCase();
   
   var lobbyKeywords = [
-    'lobby', 'matchmaking', 'mm-', 'queue',
-    'dispatch', 'gateway', 'entrance', 'portal',
-    'region', 'join', 'connect', 'recruit',
-    'waiting', 'ready', 'prepare'
+ // LOBBY
+    'lobby', 'home', 'main',
+    'matchmaking', 'queue', 'mm-',
+    'dispatch', 'gateway', 'portal',
+    'join', 'connect', 'recruit',
+    'waiting', 'ready', 'prepare',
+    'room', 'party', 'team',
+
+    // PROFILE
+    'profile', 'account', 'user',
+    'avatar', 'nickname', 'rename',
+    'stats', 'history', 'popularity',
+    'rank', 'achievement', 'badge',
+
+    // SETTINGS
+    'settings', 'config', 'option',
+    'preference', 'control', 'layout',
+    'privacy', 'permission',
+    'language', 'notification',
+
+    // LOCATION / REGION
+    'location', 'region', 'country',
+    'server', 'zone', 'area',
+    'geo', 'geolocation',
+    'timezone', 'locale',
+    'flag', 'national',
+    'ip-region'
   ];
   
   for (var i = 0; i < lobbyKeywords.length; i++) {
