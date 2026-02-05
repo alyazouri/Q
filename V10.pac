@@ -7,10 +7,7 @@
 // ================= ADVANCED CONFIGURATION =================
 var CONFIG = {
   // Match proxies - sorted by speed (fastest first)
-  MATCH_TIER1: "PROXY 46.185.131.218:20001",    // أسرع - للماتش الحي
-  MATCH_TIER2: "PROXY 212.35.66.45:8085",        // احتياطي سريع
-  MATCH_TIER3: "PROXY 46.185.131.218:443",       // احتياطي ثانوي
-  
+  MATCH_TIER1: "PROXY 46.185.131.218:20001"   // أسرع - للماتش الحي
   // Lobby proxies - optimized pool
   LOBBY_FAST: [
     "PROXY 212.35.66.45:8181",    // Port 8181 عادة أسرع للويب سوكت
@@ -785,19 +782,19 @@ function FindProxyForURL(url, host) {
       SESSION.match.locked = true;
       
       // نرجع البروكسي الأسرع مع fallback
-      return CONFIG.MATCH_TIER1 + "; " + CONFIG.MATCH_TIER2 + "; " + CONFIG.MATCH_TIER3;
+      return CONFIG.MATCH_TIER1 + "; " + CONFIG.MATCH_TIER1 + "; " + CONFIG.MATCH_TIER1;
     }
     
     // إذا كانت الجلسة مقفلة، نتحقق من التطابق
     // هذا يمنع التبديل بين سيرفرات مختلفة أثناء المباراة
     if (host === SESSION.match.hostname && networkPrefix === SESSION.match.networkPrefix) {
-      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2 + "; " + CONFIG.MATCH_TIER3;
+      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER1 + "; " + CONFIG.MATCH_TIER1;
     }
     
     // إذا كان الطلب من نفس الشبكة لكن مضيف مختلف
     // قد يكون voice أو sync server ثانوي
     if (networkPrefix === SESSION.match.networkPrefix) {
-      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER2;
+      return SESSION.match.proxy + "; " + CONFIG.MATCH_TIER1;
     }
     
     // إذا لم يتطابق، نحظره لمنع lag
