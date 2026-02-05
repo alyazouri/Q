@@ -1,21 +1,12 @@
 // =====================================================================
-// PUBG MOBILE — INSANE MODE (FINAL)
-// Lobby Open / Match Jordan CORE-ONLY
-// Production-grade PAC — No Proxy, DIRECT routing
+// PUBG MOBILE — FINAL PRODUCTION PAC
+// Goal: Max players within strong Jordan residential ranges
 // =====================================================================
-
-// ===================== CONFIG =====================
-var INSANE_CONFIG = {
-  MATCH_TIMEOUT_MS: 30 * 60 * 1000, // 30 minutes
-  IDLE_TIMEOUT_MS: 90 * 1000,       // idle reset
-  LOBBY_FALLBACK_MS: 3 * 60 * 1000  // lobby-only fallback
-};
 
 // ===================== UTILS =====================
 function normalize(h){ var i=h.indexOf(":"); return i>-1?h.substring(0,i):h; }
-function now(){ return new Date().getTime(); }
-function subnet24(ip){ return ip.split(".").slice(0,3).join("."); }
 function hardDrop(){ return "PROXY 127.0.0.1:9"; }
+function subnet24(ip){ return ip.split(".").slice(0,3).join("."); }
 
 // ===================== PUBG IDENT =====================
 function isPUBG(host){
@@ -23,63 +14,62 @@ function isPUBG(host){
     .test(host);
 }
 
-// ===================== JORDAN CORE-ONLY (MAX STABILITY) =====================
-// *No CGNAT*, *No wide pools*, *Core/Fiber slices only*
-function isJordanInsaneCore(ip){
+// ===================== JORDAN RESIDENTIAL STRONG POOLS =====================
+// Fiber + Broadband + Stable residential (no cloud)
+function isJordanResidential(ip){
   return (
-    // UMNIAH — Core slices
-    isInNet(ip, "46.185.128.0", "255.255.192.0") ||
-    isInNet(ip, "46.185.192.0", "255.255.224.0") ||
+    // UMNIAH
+    isInNet(ip,"46.185.128.0","255.255.192.0") ||
+    isInNet(ip,"46.185.192.0","255.255.224.0") ||
+    isInNet(ip,"46.248.192.0","255.255.224.0") ||
+    isInNet(ip,"92.241.32.0","255.255.240.0") ||
 
-    // ORANGE JORDAN — Core/Fiber
-    isInNet(ip, "212.35.64.0",  "255.255.240.0") ||
-    isInNet(ip, "212.35.80.0",  "255.255.240.0") ||
+    // ORANGE JORDAN
+    isInNet(ip,"212.35.64.0","255.255.240.0") ||
+    isInNet(ip,"212.35.80.0","255.255.240.0") ||
+    isInNet(ip,"212.34.0.0","255.255.224.0") ||
+    isInNet(ip,"213.139.32.0","255.255.224.0") ||
 
-    // ZAIN — Core only
-    isInNet(ip, "79.134.0.0",   "255.255.192.0") ||
-
-    // Local Amman IX / DC (stable peering)
-    isInNet(ip, "185.37.0.0",   "255.255.252.0") ||
-    isInNet(ip, "185.52.0.0",   "255.255.252.0") ||
-    isInNet(ip, "185.194.0.0",  "255.255.252.0")
+    // ZAIN JORDAN
+    isInNet(ip,"79.134.0.0","255.255.192.0") ||
+    isInNet(ip,"46.32.96.0","255.255.224.0") ||
+    isInNet(ip,"176.29.0.0","255.255.0.0")
   );
 }
 
-// ===================== TRAFFIC CLASSIFIER =====================
+// ===================== ADVANCED TRAFFIC CLASSIFICATION =====================
+// Covers modes, lobby, social, CDN, realtime gameplay
 function classifyTraffic(url, host){
-  var s=(url+host).toLowerCase();
+  var s=(url+" "+host).toLowerCase();
 
-  // Real-time gameplay
-  if (/match|battle|realtime|sync|tick|ingame|frame|state|action|damage|kill|position|movement/.test(s))
-    return "match";
+  // REALTIME MATCH (highest sensitivity)
+  if (/match|battle|realtime|sync|tick|frame|state|ingame|action|damage|kill|fire|hit|position|movement|velocity/.test(s))
+    return "MATCH";
 
-  // Lobby / matchmaking / social
-  if (/lobby|queue|gateway|dispatch|matchmaking|ready|waiting|countdown|friends|social|chat|voice/.test(s))
-    return "lobby";
+  // GAME MODES (classic/arena/ranked/custom/etc.)
+  if (/classic|erangel|miramar|sanhok|vikendi|livik|payload|arena|tdm|warehouse|ranked|unranked|training|custom|room|scrim/.test(s))
+    return "MODE";
 
-  // CDN / updates
-  if (/cdn|asset|patch|update|download/.test(s))
-    return "cdn";
+  // LOBBY / MATCHMAKING
+  if (/lobby|queue|dispatch|gateway|matchmaking|ready|waiting|countdown|warmup/.test(s))
+    return "LOBBY";
 
-  return "other";
+  // SOCIAL / VOICE
+  if (/voice|voip|mic|audio|friend|social|squad|team|clan|chat/.test(s))
+    return "SOCIAL";
+
+  // CDN / ASSETS
+  if (/cdn|asset|patch|update|download|bundle|pak|obb/.test(s))
+    return "CDN";
+
+  return "OTHER";
 }
 
-// ===================== MATCH SESSION =====================
-var MATCH_SESSION = {
+// ===================== MATCH SESSION (LIGHT PINNING) =====================
+var MATCH = {
   active:false,
   serverIP:null,
-  subnet:null,
-  startAt:0,
-  lastSeen:0,
-  lobbySince:0,
-  reset:function(){
-    this.active=false;
-    this.serverIP=null;
-    this.subnet=null;
-    this.startAt=0;
-    this.lastSeen=0;
-    this.lobbySince=0;
-  }
+  subnet:null
 };
 
 // ===================== MAIN =====================
@@ -87,64 +77,41 @@ function FindProxyForURL(url, host){
 
   host = normalize(host.toLowerCase());
 
-  // Non-PUBG → DIRECT
+  // Non-PUBG traffic
   if (!isPUBG(host)) return "DIRECT";
 
   var ip = dnsResolve(host);
   if (!ip || ip.indexOf(":")!==-1) return hardDrop();
 
-  var t = classifyTraffic(url, host);
-  var ts = now();
+  var type = classifyTraffic(url, host);
 
-  // ---- Auto Reset (timeout / idle) ----
-  if (MATCH_SESSION.active){
-    if (ts - MATCH_SESSION.startAt > INSANE_CONFIG.MATCH_TIMEOUT_MS){
-      MATCH_SESSION.reset();
-    } else if (ts - MATCH_SESSION.lastSeen > INSANE_CONFIG.IDLE_TIMEOUT_MS){
-      MATCH_SESSION.reset();
-    }
-  }
-
-  // ---- LOBBY / CDN / OTHER (OPEN) ----
-  if (t==="lobby" || t==="cdn" || t==="other"){
-    if (!MATCH_SESSION.active){
-      if (!MATCH_SESSION.lobbySince) MATCH_SESSION.lobbySince = ts;
-      // Lobby-only fallback after wait
-      if (ts - MATCH_SESSION.lobbySince > INSANE_CONFIG.LOBBY_FALLBACK_MS){
-        return "DIRECT";
-      }
-    }
+  // ---- OPEN PATHS (increase matchmaking) ----
+  if (type==="LOBBY" || type==="SOCIAL" || type==="CDN" || type==="OTHER"){
     return "DIRECT";
   }
 
-  // ---- MATCH (INSANE CORE-ONLY) ----
-  if (t==="match"){
+  // ---- MODES (allow entry; match decides) ----
+  if (type==="MODE"){
+    return "DIRECT";
+  }
 
-    // First packet → must be Jordan CORE
-    if (!MATCH_SESSION.active){
-      if (!isJordanInsaneCore(ip)) return hardDrop();
-
-      MATCH_SESSION.active = true;
-      MATCH_SESSION.serverIP = ip;
-      MATCH_SESSION.subnet = subnet24(ip);
-      MATCH_SESSION.startAt = ts;
-      MATCH_SESSION.lastSeen = ts;
-      MATCH_SESSION.lobbySince = 0;
+  // ---- MATCH (Jordan residential only) ----
+  if (type==="MATCH"){
+    // First packet
+    if (!MATCH.active){
+      if (!isJordanResidential(ip)) return hardDrop();
+      MATCH.active = true;
+      MATCH.serverIP = ip;
+      MATCH.subnet = subnet24(ip);
       return "DIRECT";
     }
-
-    // Ongoing match → update activity
-    MATCH_SESSION.lastSeen = ts;
-
-    // Pinning: same IP + same /24
-    if (ip !== MATCH_SESSION.serverIP) return hardDrop();
-    if (subnet24(ip) !== MATCH_SESSION.subnet) return hardDrop();
-
+    // Pinning during match
+    if (ip !== MATCH.serverIP) return hardDrop();
+    if (subnet24(ip) !== MATCH.subnet) return hardDrop();
     return "DIRECT";
   }
 
-  // Default safety
-  return hardDrop();
+  return "DIRECT";
 }
 // =====================================================================
 // END OF FILE
