@@ -97,8 +97,8 @@ function FindProxyForURL(url, host){
   if (!root) return BLOCK;
 
   var parts = ip.split(":");
-  var net48 = parts.slice(0,4).join(":");
-  var net64 = parts.slice(0,5).join(":");
+  var net48 = parts.slice(0,5).join(":");
+  var net64 = parts.slice(0,6).join(":");
 
   var phase = classify(host,url);
 
