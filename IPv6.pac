@@ -1,6 +1,7 @@
 // ============================================================
-//  JORDAN PUBG MOBILE — MAX LOCAL DENSITY LOCK (MULTI ASN)
-//  IPv6 ONLY — SINGLE /48 — SINGLE /64
+//  JORDAN PUBG MOBILE — HIGH DENSITY FINAL
+//  IPv6 ONLY — JORDAN LOCK — EGYPT/EU BLOCK
+//  /48 REGION LOCK — /64 MATCH POOL (3)
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
@@ -11,18 +12,17 @@ var BLOCK  = "PROXY 0.0.0.0:0";
 // CORE STATE
 // ============================================================
 
-var L = {
-  active: false,
-  root: null,
+var J = {
   region48: null,
-  match64: null
+  match64Pool: {},
+  maxMatch64: 3
 };
 
 // ============================================================
-// 🔥 ALL JORDAN ASN ROOTS
+// ✅ JORDAN ASN ROOTS
 // ============================================================
 
-var ROOTS = [
+var ALLOWED_ROOTS = [
   "2a00:18d8", // Orange
   "2a01:9700", // JDC
   "2a00:18d0", // Damamax
@@ -32,13 +32,26 @@ var ROOTS = [
 ];
 
 // ============================================================
-// TRAFFIC SIGNATURES
+// 🚫 BLOCK EGYPT / EUROPE COMMON RANGES
+// ============================================================
+
+var BLOCKED_ROOTS = [
+  "2c0f:",      
+  "2a02:2f",
+  "2a03:",
+  "2a01:4f8",
+  "2a01:7e"
+];
+
+// ============================================================
+// TRAFFIC CLASSIFICATION (ALL PUBG MODES)
 // ============================================================
 
 var SIG = {
-  MATCH: /match|battle|ranked|arena|royale|classic|metro|payload|gamesvr|realtime|voice|relay|ingame/i,
-  LOBBY: /lobby|matchmaking|queue|login|auth|gateway|session|profile|inventory|store|cdn|config/i,
-  SEC:   /anticheat|verify|shield|security|ban|integrity/i
+
+  MATCH: /match|battle|classic|ranked|competitive|arena|tdm|teamdeathmatch|gungame|domination|payload|metro|metroroyale|zombie|infection|evoground|royale|training|erangel|livik|miramar|sanhok|vikendi|karakin|nusa|rondo|fpp|tpp|squad|duo|solo|war|sniper|quickmatch|arcade|clash|gunfight|ingame|gaming|realtime|gamesvr|relay|voice|customroom|room|scrim|tournament/i,
+
+  LOBBY: /lobby|matchmaking|queue|login|auth|region|gateway|session|profile|inventory|store|catalog|shop|news|patch|update|cdn|asset|config|feedback|event|mission|reward|season|rank|progress/i
 };
 
 // ============================================================
@@ -58,22 +71,21 @@ function expandIPv6(ip){
 
   var missing = 8 - (left.length + right.length);
   var zeros = [];
-
-  for (var i = 0; i < missing; i++) zeros.push("0");
+  for (var i=0;i<missing;i++) zeros.push("0");
 
   return left.concat(zeros).concat(right).join(":");
 }
 
-function rootMatch(ip){
-  for (var i=0;i<ROOTS.length;i++){
-    if (ip.indexOf(ROOTS[i]) === 0) return ROOTS[i];
+function startsWithAny(ip, list){
+  for (var i=0;i<list.length;i++){
+    if (ip.indexOf(list[i]) === 0) return true;
   }
-  return null;
+  return false;
 }
 
 function classify(host,url){
   var d=(host+url).toLowerCase();
-  if (SIG.MATCH.test(d) || SIG.SEC.test(d)) return 2;
+  if (SIG.MATCH.test(d)) return 2;
   if (SIG.LOBBY.test(d)) return 1;
   return 0;
 }
@@ -101,8 +113,8 @@ function FindProxyForURL(url, host){
 
   ip = expandIPv6(ip);
 
-  var root = rootMatch(ip);
-  if (!root) return BLOCK;
+  if (startsWithAny(ip, BLOCKED_ROOTS)) return BLOCK;
+  if (!startsWithAny(ip, ALLOWED_ROOTS)) return BLOCK;
 
   var parts = ip.split(":");
   if (parts.length !== 8) return BLOCK;
@@ -112,27 +124,33 @@ function FindProxyForURL(url, host){
 
   var phase = classify(host,url);
 
-  // INITIAL LOCK
-  if (!L.active){
-    L.active = true;
-    L.root = root;
-    L.region48 = net48;
+  // ============================
+  // LOCK /48 AFTER LOBBY
+  // ============================
+
+  if (phase === 1 && !J.region48){
+    J.region48 = net48;
   }
 
-  // ASN HARD LOCK (must stay on same ASN after start)
-  if (root !== L.root) return BLOCK;
+  if (!J.region48) return PROXY;
 
-  // /48 HARD LOCK
-  if (phase >= 1){
-    if (net48 !== L.region48) return BLOCK;
-  }
+  if (net48 !== J.region48) return BLOCK;
 
-  // /64 HARD MATCH LOCK
+  // ============================
+  // MATCH /64 POOL
+  // ============================
+
   if (phase === 2){
-    if (!L.match64){
-      L.match64 = net64;
+
+    if (!J.match64Pool[net64]){
+
+      var count=0;
+      for (var k in J.match64Pool) count++;
+
+      if (count >= J.maxMatch64) return BLOCK;
+
+      J.match64Pool[net64] = true;
     }
-    if (net64 !== L.match64) return BLOCK;
   }
 
   return PROXY;
