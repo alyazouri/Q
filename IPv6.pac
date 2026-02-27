@@ -1,6 +1,6 @@
 // ============================================================
-//  JORDAN PUBG MOBILE — FULL STRICT LOCK v9 ULTRA STABLE
-//  IPv6 ONLY — ASN LOCK — /48 REGION — /64 MATCH POOL
+//  JORDAN PUBG MOBILE — MAX LOCAL DENSITY LOCK (MULTI ASN)
+//  IPv6 ONLY — SINGLE /48 — SINGLE /64
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
@@ -11,16 +11,15 @@ var BLOCK  = "PROXY 0.0.0.0:0";
 // CORE STATE
 // ============================================================
 
-var C = {
-  started: false,
+var L = {
+  active: false,
   root: null,
   region48: null,
-  match64: {},
-  maxMatch64: 3
+  match64: null
 };
 
 // ============================================================
-// JORDAN ASN ROOT PREFIXES
+// 🔥 ALL JORDAN ASN ROOTS
 // ============================================================
 
 var ROOTS = [
@@ -33,7 +32,7 @@ var ROOTS = [
 ];
 
 // ============================================================
-// TRAFFIC CLASSIFICATION
+// TRAFFIC SIGNATURES
 // ============================================================
 
 var SIG = {
@@ -46,113 +45,94 @@ var SIG = {
 // HELPERS
 // ============================================================
 
-function norm(ip){
-  return ip ? ip.toLowerCase() : "";
-}
+function norm(ip){ return ip ? ip.toLowerCase() : ""; }
+function isIPv6(ip){ return ip && ip.indexOf(":") !== -1; }
+function validIPv6(ip){ return /^[0-9a-f:]+$/i.test(ip); }
 
-function isIPv6(ip){
-  return ip && ip.indexOf(":") !== -1;
-}
+function expandIPv6(ip){
+  if (ip.indexOf("::") === -1) return ip;
 
-function validIPv6(ip){
-  return /^[0-9a-f:]+$/i.test(ip);
+  var parts = ip.split("::");
+  var left = parts[0] ? parts[0].split(":") : [];
+  var right = parts[1] ? parts[1].split(":") : [];
+
+  var missing = 8 - (left.length + right.length);
+  var zeros = [];
+
+  for (var i = 0; i < missing; i++) zeros.push("0");
+
+  return left.concat(zeros).concat(right).join(":");
 }
 
 function rootMatch(ip){
-  for (var i = 0; i < ROOTS.length; i++){
-    if (ip.indexOf(ROOTS[i]) === 0){
-      return ROOTS[i];
-    }
+  for (var i=0;i<ROOTS.length;i++){
+    if (ip.indexOf(ROOTS[i]) === 0) return ROOTS[i];
   }
   return null;
 }
 
-function classify(host, url){
-  var d = (host + url).toLowerCase();
+function classify(host,url){
+  var d=(host+url).toLowerCase();
   if (SIG.MATCH.test(d) || SIG.SEC.test(d)) return 2;
   if (SIG.LOBBY.test(d)) return 1;
   return 0;
 }
 
-function isGame(host, url){
-  return /pubg|tencent|krafton|lightspeed|levelinfinite/i.test(host + url);
-}
-
-function excluded(host){
-  return shExpMatch(host,"*.youtube.com") ||
-         shExpMatch(host,"*.googlevideo.com") ||
-         shExpMatch(host,"github.com") ||
-         shExpMatch(host,"*.githubusercontent.com");
+function isGame(host,url){
+  return /pubg|tencent|krafton|lightspeed|levelinfinite/i.test(host+url);
 }
 
 // ============================================================
-// MAIN ENGINE
+// MAIN
 // ============================================================
 
 function FindProxyForURL(url, host){
 
   if (isPlainHostName(host)) return DIRECT;
-  if (excluded(host)) return DIRECT;
   if (!isGame(host,url)) return DIRECT;
 
-  var ip = "";
-  try { ip = dnsResolve(host); } catch(e) { ip = ""; }
+  var ip="";
+  try{ ip=dnsResolve(host);}catch(e){ip="";}
 
-  // Strict IPv6 only
   if (!ip || !isIPv6(ip)) return BLOCK;
 
   ip = norm(ip);
-
   if (!validIPv6(ip)) return BLOCK;
 
-  // Prevent compressed IPv6 (::) to avoid split errors
-  if (ip.indexOf("::") !== -1) return BLOCK;
+  ip = expandIPv6(ip);
 
   var root = rootMatch(ip);
   if (!root) return BLOCK;
 
   var parts = ip.split(":");
+  if (parts.length !== 8) return BLOCK;
 
-  if (parts.length < 5) return BLOCK;
-
-  // Proper subnet extraction
-  var net48 = parts.slice(0,4).join(":"); // /48
-  var net64 = parts.slice(0,5).join(":"); // /64
+  var net48 = parts.slice(0,4).join(":");
+  var net64 = parts.slice(0,5).join(":");
 
   var phase = classify(host,url);
 
-  // ============================================================
   // INITIAL LOCK
-  // ============================================================
-
-  if (!C.started){
-    C.started  = true;
-    C.root     = root;
-    C.region48 = net48;
+  if (!L.active){
+    L.active = true;
+    L.root = root;
+    L.region48 = net48;
   }
 
-  // ASN HARD LOCK
-  if (root !== C.root) return BLOCK;
+  // ASN HARD LOCK (must stay on same ASN after start)
+  if (root !== L.root) return BLOCK;
 
-  // REGION /48 LOCK
+  // /48 HARD LOCK
   if (phase >= 1){
-    if (net48 !== C.region48) return BLOCK;
+    if (net48 !== L.region48) return BLOCK;
   }
 
-  // MATCH /64 POOL CONTROL
+  // /64 HARD MATCH LOCK
   if (phase === 2){
-
-    if (!C.match64[net64]){
-
-      var count = 0;
-      for (var k in C.match64) count++;
-
-      if (count >= C.maxMatch64){
-        return BLOCK;
-      }
-
-      C.match64[net64] = true;
+    if (!L.match64){
+      L.match64 = net64;
     }
+    if (net64 !== L.match64) return BLOCK;
   }
 
   return PROXY;
