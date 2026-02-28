@@ -12,7 +12,7 @@
 // 
 // ============================================================
 
-var PROXY  = "PROXY jo-proxy.local:3128";
+var PROXY  = "PROXY 91.106.109.50:20005";
 var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
