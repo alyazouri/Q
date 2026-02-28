@@ -15,7 +15,7 @@
 
 var PROXY_CONFIG = {
   // البروكسي الأساسي - استبدله ببروكسي أردني
-  primary: "PROXY jo-proxy.local:3128",
+  primary: "PROXY 46.185.131.218:20002",
   
   // بروكسي احتياطي
   backup: "PROXY 46.185.131.218:20001",
