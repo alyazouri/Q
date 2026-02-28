@@ -1,144 +1,111 @@
 // ============================================================
-//  JORDAN PUBG MOBILE — FULL STRICT LOCK v7.0
-//  IPv6 ONLY — Exact Prefix Lock (Safe Expanded)
-//  Match: /64
-//  Lobby: /48
-//  Only Listed Prefixes Allowed
+//  NETWORK STABLE FLOW — PUBG UNIFIED VERSION
+//  IPv6 Only
+//  Single Unified Traffic Detection
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
 var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
-// ============================================================
-// SESSION STATE
-// ============================================================
 var SESSION = {
-  matchNet:  null,
-  matchHost: null,
-  lobbyNet:  null
+  gameNet64: null,
+  gameNet48: null
 };
 
-// ============================================================
-// EXACT ALLOWED PREFIXES (/48 FORMAT EXPANDED)
-// ============================================================
 var ALLOWED_PREFIXES = [
-  "2a00:18d8:0000",
-  "2a00:18d8:0002",
-  "2a00:18d8:0003",
-  "2a00:18d8:4000",
-  "2a00:18d8:4001",
-  "2a00:18d8:4002",
+  "2a00:18d8:0000","2a00:18d8:0002","2a00:18d8:0003",
+  "2a00:18d8:4000","2a00:18d8:4001","2a00:18d8:4002",
   "2a03:6b02:2000",
-  "2a01:9700:1700",
-  "2a01:9700:1c00",
-  "2a01:9700:3100",
-  "2a01:9700:3200",
-  "2a01:9700:3300",
-  "2a01:9700:3400",
-  "2a01:9700:3500"
+  "2a01:9700:1700","2a01:9700:1c00","2a01:9700:3100",
+  "2a01:9700:3200","2a01:9700:3300","2a01:9700:3400","2a01:9700:3500"
 ];
 
-// ============================================================
-// HELPERS
-// ============================================================
+// ---------- IPv6 Helpers ----------
 
-// Safe IPv6 detection
-function isIPv6(ip) {
+function isIPv6(ip){
   return ip && ip.indexOf(":") !== -1;
 }
 
-// Expand IPv6 to full 8 hextets
-function expandIPv6(address) {
+function expandIPv6(addr){
   var full = [];
-  var halves = address.split("::");
+  var halves = addr.split("::");
 
-  if (halves.length === 2) {
+  if(halves.length === 2){
     var left  = halves[0] ? halves[0].split(":") : [];
     var right = halves[1] ? halves[1].split(":") : [];
     var missing = 8 - (left.length + right.length);
     full = left.concat(Array(missing).fill("0")).concat(right);
   } else {
-    full = address.split(":");
+    full = addr.split(":");
   }
 
-  for (var i = 0; i < full.length; i++) {
-    while (full[i].length < 4) full[i] = "0" + full[i];
+  for(var i=0;i<full.length;i++){
+    while(full[i].length < 4) full[i] = "0" + full[i];
   }
 
   return full;
 }
 
-// Check if IPv6 belongs to allowed /48
-function isAllowedIPv6(ip) {
-  if (!isIPv6(ip)) return false;
+function isAllowedIPv6(ip){
+  if(!isIPv6(ip)) return false;
 
   var parts = expandIPv6(ip);
   var net48 = parts.slice(0,3).join(":");
 
-  for (var i = 0; i < ALLOWED_PREFIXES.length; i++) {
-    if (net48 === ALLOWED_PREFIXES[i]) return true;
+  for(var i=0;i<ALLOWED_PREFIXES.length;i++){
+    if(net48 === ALLOWED_PREFIXES[i]) return true;
   }
-
   return false;
 }
 
-function isPUBG(h,u){
-  return /pubg|tencent|krafton|lightspeed|levelinfinite/i.test(h+u);
+// ============================================================
+//  PUBG Unified Traffic Detection (ALL SERVICES)
+// ============================================================
+
+function isPubgTraffic(data){
+  return /gamesvr|realtime|relay|world|udp|search|matchmaking|queue|matching|dispatch|lobby|login|auth|region|gateway|session|profile|account|friends|social|presence|chat|group|team|party|invite|squad|duo|solo|opponent|enemy|ranking|leaderboard|recruit|recruitment|pool|battlepool|inventory|store|shop|catalog|news|event|mission|reward|season|pass|update|patch|cdn|asset|config|feedback|mail|notice|community|announcement|ugc|clan|guild/i.test(data);
 }
 
 // ============================================================
-// MAIN
+//  MAIN
 // ============================================================
-function FindProxyForURL(url, host) {
+
+function FindProxyForURL(url, host){
 
   var ip = "";
   try { ip = dnsResolve(host); } catch(e){ ip=""; }
 
-  if (isPlainHostName(host)) return DIRECT;
+  if(isPlainHostName(host)) return DIRECT;
 
-  if (!isPUBG(host,url)) return DIRECT;
-
-  if (!ip || !isIPv6(ip)) return BLOCK;
-
-  if (!isAllowedIPv6(ip)) return BLOCK;
+  if(!ip || !isIPv6(ip)) return BLOCK;
+  if(!isAllowedIPv6(ip)) return BLOCK;
 
   var parts = expandIPv6(ip);
-  var data = (host+url).toLowerCase();
+  var net64 = parts.slice(0,4).join(":");
+  var net48 = parts.slice(0,3).join(":");
 
-  var isCritical = /match|battle|arena|classic|ranked|tdm|payload|metro|royale/i.test(data);
-  var isSecurity = /anticheat|verify|shield|security|ban/i.test(data);
-  var isLobby    = /lobby|matchmaking|queue|login|auth|region|gateway|session/i.test(data);
+  var data = (host + url).toLowerCase();
 
-  // ===== MATCH / SECURITY → /64 lock =====
-  if (isCritical || isSecurity) {
+  // ===== PUBG TRAFFIC ONLY =====
+  if(isPubgTraffic(data)){
 
-    var net64 = parts.slice(0,4).join(":");
+    // Lock during active realtime gameplay only
+    if(/gamesvr|realtime|relay|world|udp/i.test(data)){
 
-    if (!SESSION.matchNet) {
-      SESSION.matchNet  = net64;
-      SESSION.matchHost = host;
-      return PROXY;
+      if(!SESSION.gameNet64){
+        SESSION.gameNet64 = net64;
+        SESSION.gameNet48 = net48;
+        return PROXY;
+      }
+
+      if(net64 === SESSION.gameNet64) return PROXY;
+      if(net48 === SESSION.gameNet48) return PROXY;
+
+      return BLOCK;
     }
 
-    if (host !== SESSION.matchHost) return BLOCK;
-    if (net64 !== SESSION.matchNet) return BLOCK;
-
-    return PROXY;
-  }
-
-  // ===== LOBBY → /48 lock =====
-  if (isLobby) {
-
-    var net48 = parts.slice(0,3).join(":");
-
-    if (!SESSION.lobbyNet) {
-      SESSION.lobbyNet = net48;
-      return PROXY;
-    }
-
-    if (net48 !== SESSION.lobbyNet) return BLOCK;
-
+    // All other PUBG services
     return PROXY;
   }
 
