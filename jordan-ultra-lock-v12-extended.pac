@@ -14,7 +14,7 @@
 // ================= PROXY CONFIGURATION =================
 
 var PROXY_CONFIG = {
-  primary: "PROXY jo-proxy.local:3128",
+  primary: "PROXY 91.106.109.50:20005",
   backup: "PROXY 46.185.131.218:20001",
   direct: "DIRECT",
   block: "PROXY 0.0.0.0:0"
