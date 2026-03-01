@@ -1,6 +1,8 @@
 // ============================================================
-// 🇯🇴 JORDAN ULTRA MAX v17 - Dynamic Smart Lock
-// Strongest Stable Version
+// 🇯🇴 JORDAN V19.2
+// v19.1 Engine + v17 Prefix Style
+// Match = /56 Strict
+// Lobby = Wide Reset
 // ============================================================
 
 var PROXY  = "PROXY 91.106.109.50:20005";
@@ -8,20 +10,20 @@ var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
 var SESSION = {
-  lockedRegion: null,
   locked56: null,
   locked64: null,
   lockedIP: null,
   active: false
 };
 
-// ================= BASIC HELPERS =================
+// ================= HELPERS (v19.1) =================
 
 function isIPv6(ip){ return ip && ip.indexOf(":") !== -1; }
 function isIPv4(ip){ return ip && ip.indexOf(".") !== -1 && ip.indexOf(":") === -1; }
 
 function expandIPv6(addr){
   if(!addr) return "";
+
   var parts=addr.split("::");
   var full=[];
 
@@ -47,55 +49,77 @@ function isPUBG(host,url){
   return /pubg|tencent|krafton|lightspeed|levelinfinite|anticheat|tpgbattle/i.test(s);
 }
 
-// ================= REGION CHECK =================
-
-function regionType(expanded){
-
-  // 🚫 Europe
-  if(expanded.startsWith("2a00") ||
-     expanded.startsWith("2a01:0") ||
-     expanded.startsWith("2a02:0"))
-    return "BLOCK";
-
-  // 🇯🇴 Jordan
-  if(expanded.startsWith("2a01:97") ||
-     expanded.startsWith("2a02:24") ||
-     expanded.startsWith("2a02:25") ||
-     expanded.startsWith("2a02:27") ||
-     expanded.startsWith("2a01:9e") ||
-     expanded.startsWith("2a01:9f") ||
-     expanded.startsWith("2a01:a"))
-    return "JO";
-
-  // 🌍 Middle East
-  if(expanded.startsWith("2a02:20") ||
-     expanded.startsWith("2a02:21") ||
-     expanded.startsWith("2a02:22") ||
-     expanded.startsWith("2a02:23") ||
-     expanded.startsWith("2a02:30") ||
-     expanded.startsWith("2a02:31") ||
-     expanded.startsWith("2a02:32") ||
-     expanded.startsWith("2a02:40") ||
-     expanded.startsWith("2a02:41") ||
-     expanded.startsWith("2a02:42") ||
-     expanded.startsWith("2a02:50") ||
-     expanded.startsWith("2a02:51") ||
-     expanded.startsWith("2a02:52") ||
-     expanded.startsWith("2a02:60") ||
-     expanded.startsWith("2a02:61") ||
-     expanded.startsWith("2a02:70") ||
-     expanded.startsWith("2a02:71") ||
-     expanded.startsWith("2a02:80") ||
-     expanded.startsWith("2a02:81") ||
-     expanded.startsWith("2a02:90") ||
-     expanded.startsWith("2a02:91") ||
-     expanded.startsWith("2a02:92"))
-    return "ME";
-
-  return "BLOCK";
+function isMatchTraffic(data){
+  return /match|battle|ranked|arena|tdm|ingame|gamesvr|relay|realtime|matchstart|matchmaking|playerjoin|spawn/i.test(data);
 }
 
-// ================= MAIN =================
+function isLobbyTraffic(data){
+  return /lobby|login|auth|profile|inventory|store|gateway|session|friends|clan|settings|heartbeat|status|reward|mail/i.test(data);
+}
+
+// ================= EUROPE HARD BLOCK (v19.1) =================
+
+function isEurope(expanded){
+
+  if(expanded.startsWith("2a02:0"))
+    return true;
+
+  if(expanded.startsWith("2a00") &&
+     !expanded.startsWith("2a00:1f40") &&
+     !expanded.startsWith("2a00:1f41"))
+    return true;
+
+  return false;
+}
+
+// ================= PREFIX CHECK (v17 STYLE) =================
+
+function isAllowed(expanded){
+
+  if(
+    expanded.startsWith("2a01:9700") ||
+    expanded.startsWith("2a01:9701") ||
+    expanded.startsWith("2a01:9702") ||
+    expanded.startsWith("2a01:9703") ||
+    expanded.startsWith("2a01:9704") ||
+    expanded.startsWith("2a01:9705") ||
+    expanded.startsWith("2a01:9706") ||
+    expanded.startsWith("2a01:9707") ||
+    expanded.startsWith("2a01:9708") ||
+    expanded.startsWith("2a01:9709") ||
+    expanded.startsWith("2a01:970a") ||
+    expanded.startsWith("2a01:970b") ||
+    expanded.startsWith("2a01:970c") ||
+    expanded.startsWith("2a01:970d") ||
+    expanded.startsWith("2a01:970e") ||
+    expanded.startsWith("2a01:970f") ||
+
+    expanded.startsWith("2a02:2400") ||
+    expanded.startsWith("2a02:2401") ||
+    expanded.startsWith("2a02:2402") ||
+    expanded.startsWith("2a02:2403") ||
+
+    expanded.startsWith("2a02:2500") ||
+    expanded.startsWith("2a02:2501") ||
+    expanded.startsWith("2a02:2502") ||
+
+    expanded.startsWith("2a02:2700") ||
+    expanded.startsWith("2a02:2701") ||
+
+    expanded.startsWith("2a01:9e00") ||
+    expanded.startsWith("2a01:9e01") ||
+
+    expanded.startsWith("2a01:9f00") ||
+
+    expanded.startsWith("2a00:1f40") ||
+    expanded.startsWith("2a00:1f41")
+  )
+    return true;
+
+  return false;
+}
+
+// ================= MAIN (v19.1) =================
 
 function FindProxyForURL(url,host){
 
@@ -106,39 +130,44 @@ function FindProxyForURL(url,host){
   try{ ip=dnsResolve(host); }catch(e){}
 
   if(!ip) return PROXY;
-
   if(isIPv4(ip)) return BLOCK;
   if(!isIPv6(ip)) return BLOCK;
 
   var expanded=expandIPv6(ip);
-  var region=regionType(expanded);
 
-  if(region==="BLOCK") return BLOCK;
+  if(isEurope(expanded)) return BLOCK;
+  if(!isAllowed(expanded)) return BLOCK;
 
   var net56=expanded.substring(0,17);
   var net64=expanded.substring(0,19);
+  var data=(host+(url||"")).toLowerCase();
 
-  // 🔒 Dynamic Smart Lock
-  if(!SESSION.active){
+  // ================= MATCH MODE (v19.1) =================
+  if(isMatchTraffic(data)){
 
-    SESSION.lockedRegion=region;
-    SESSION.locked56=net56;
-    SESSION.locked64=net64;
-    SESSION.lockedIP=expanded;
-    SESSION.active=true;
+    if(!SESSION.active){
+      SESSION.locked56=net56;
+      SESSION.locked64=net64;
+      SESSION.lockedIP=expanded;
+      SESSION.active=true;
+      return PROXY;
+    }
+
+    if(net56!==SESSION.locked56) return BLOCK;
+    if(net64!==SESSION.locked64) return BLOCK;
+    if(expanded!==SESSION.lockedIP) return BLOCK;
 
     return PROXY;
   }
 
-  // يمنع تغيير المنطقة
-  if(region!==SESSION.lockedRegion) return BLOCK;
-
-  // يمنع تغيير الشبكة
-  if(net56!==SESSION.locked56) return BLOCK;
-  if(net64!==SESSION.locked64) return BLOCK;
-
-  // يمنع تغيير IP
-  if(expanded!==SESSION.lockedIP) return BLOCK;
+  // ================= LOBBY MODE (v19.1) =================
+  if(isLobbyTraffic(data)){
+    SESSION.active=false;
+    SESSION.locked56=null;
+    SESSION.locked64=null;
+    SESSION.lockedIP=null;
+    return PROXY;
+  }
 
   return PROXY;
 }
