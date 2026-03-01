@@ -151,7 +151,7 @@ function FindProxyForURL(url, host) {
   // ===== LOBBY → /48 lock =====
   if (isLobby) {
 
-    var net48 = parts.slice(0,2).join(":");
+    var net48 = parts.slice(0,4).join(":");
 
     if (!SESSION.lobbyNet) {
       SESSION.lobbyNet = net48;
