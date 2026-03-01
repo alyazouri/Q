@@ -138,7 +138,7 @@ function FindProxyForURL(url,host){
   if(isEurope(expanded)) return BLOCK;
   if(!isAllowed(expanded)) return BLOCK;
 
-  var net56=expanded.substring(0,8);
+  var net56=expanded.substring(0,9);
   var net64=expanded.substring(0,17);
   var data=(host+(url||"")).toLowerCase();
 
