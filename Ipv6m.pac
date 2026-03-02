@@ -58,7 +58,7 @@ function isJordan(ip){
   ip = expandIPv6(ip);
 
   return (
-    ip.startsWith("2a01:9700:")
+    ip.startsWith("2001:32c0:")
   );
 }
 
