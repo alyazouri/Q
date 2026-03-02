@@ -56,9 +56,14 @@ function expandIPv6(address){
 function isJordan(ip){
 
   ip = expandIPv6(ip);
-
   return (
-    ip.startsWith("2a01:ee40:")
+    ip.startsWith("2a01:9700:3f00:")||
+    ip.startsWith("2a01:9700:4000:")||
+    ip.startsWith("2a01:9700:4100:")||
+    ip.startsWith("2a01:9700:4200:")||
+    ip.startsWith("2a01:9700:4300:")||
+    ip.startsWith("2a01:9700:4400:")||
+    ip.startsWith("2a01:9700:4500:")
   );
 }
 
@@ -119,7 +124,7 @@ function FindProxyForURL(url, host){
   if (!isJordan(ip)) return BLOCK;
 
   var parts  = fullIP.split(":");
-  var isp2 = parts.slice(0,2).join(":");
+  var isp2 = parts.slice(0,3).join(":");
   var net3 = parts.slice(0,3).join(":");
   var net4 = parts.slice(0,4).join(":");
 
