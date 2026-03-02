@@ -1,9 +1,8 @@
 // ============================================================
-// PUBG HARDCORE ISP + REGION LOCK
+// PUBG FINAL ULTIMATE FORCED JORDAN LOCK
 // Lobby  = 3 segments
 // Match  = 4 segments
-// ISP Lock Enabled
-// Ultra Secure Version
+// ISP Lock + Forced Retry
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
@@ -11,23 +10,19 @@ var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
 var SESSION = {
-  ispNet:   null,  // أول خانتين (ISP)
-  lobbyNet: null,  // أول 3 خانات
-  matchNet: null,  // أول 4 خانات
+  ispNet:   null,
+  lobbyNet: null,
+  matchNet: null,
   inMatch:  false
 };
 
-// ============================================================
-// BASIC CHECK
-// ============================================================
+// ================= IPv6 CHECK =================
 
 function isIPv6(ip){
   return ip && ip.indexOf(":") !== -1;
 }
 
-// ============================================================
-// EXPAND IPv6 (:: support)
-// ============================================================
+// ================= EXPAND IPv6 (:: support) =================
 
 function expandIPv6(address){
 
@@ -55,13 +50,9 @@ function expandIPv6(address){
   return full.join(":").toLowerCase();
 }
 
-// ============================================================
-// FAST PREFIX CHECK (Jordan Only)
-// ============================================================
+// ================= JORDAN PREFIX CHECK =================
 
-function isAllowedIPv6(ip){
-
-  if (!isIPv6(ip)) return false;
+function isJordan(ip){
 
   ip = expandIPv6(ip);
 
@@ -72,17 +63,13 @@ function isAllowedIPv6(ip){
   );
 }
 
-// ============================================================
-// PUBG DETECTION
-// ============================================================
+// ================= PUBG DETECTION =================
 
 function isPUBG(h,u){
   return /pubg|tencent|krafton|lightspeed|levelinfinite/i.test(h+u);
 }
 
-// ============================================================
-// MAIN
-// ============================================================
+// ================= MAIN =================
 
 function FindProxyForURL(url, host){
 
@@ -92,65 +79,61 @@ function FindProxyForURL(url, host){
   if (isPlainHostName(host)) return DIRECT;
   if (!isPUBG(host,url)) return DIRECT;
   if (!ip || !isIPv6(ip)) return BLOCK;
-  if (!isAllowedIPv6(ip)) return BLOCK;
 
   var fullIP = expandIPv6(ip);
   var parts  = fullIP.split(":");
 
-  var isp2  = parts.slice(0,2).join(":"); // ISP
-  var net3  = parts.slice(0,3).join(":"); // Lobby
-  var net4  = parts.slice(0,4).join(":"); // Match
+  var isp2 = parts.slice(0,2).join(":");
+  var net3 = parts.slice(0,3).join(":");
+  var net4 = parts.slice(0,4).join(":");
 
   var data = (host+url).toLowerCase();
 
-  var isLobby = /lobby|login|auth|session|matchmaking|queue|profile|inventory|store|friends|party|clan|chat|update|cdn/i.test(data);
+  // ===== LOBBY شامل كامل =====
+  var isLobby = /lobby|login|auth|session|gateway|region|matchmaking|queue|profile|inventory|store|shop|catalog|news|event|mission|reward|mail|friends|clan|chat|voice|party|team|config|settings|update|patch|cdn|asset|download|social|rank|leaderboard/i.test(data);
 
-  var isMatch = /match|battle|classic|ranked|arena|tdm|metro|royale|war|arcade|ingame|gamesvr|relay/i.test(data);
+  // ===== MATCH شامل كامل =====
+  var isMatch = /match|battle|classic|ranked|unranked|competitive|arena|tdm|teamdeathmatch|gungame|domination|assault|payload|metro|metroroyale|zombie|infection|evoground|ultimate|royale|war|sniper|quickmatch|arcade|clash|gunfight|ingame|gamesvr|relay|realtime|spectate|observer|combat|survival/i.test(data);
 
-  // =========================================================
-  // ISP LOCK (أقسى مستوى)
-  // =========================================================
-
-  if (!SESSION.ispNet){
-    SESSION.ispNet = isp2;
-  }
-
-  if (isp2 !== SESSION.ispNet) return BLOCK;
-
-  // =========================================================
-  // AUTO RESET AFTER MATCH
-  // =========================================================
+  // ================= AUTO RESET =================
 
   if (!isMatch && SESSION.inMatch){
     SESSION.matchNet = null;
     SESSION.inMatch  = false;
   }
 
-  // =========================================================
-  // LOBBY LOCK (3 segments)
-  // =========================================================
+  // ================= LOBBY =================
 
   if (isLobby){
 
-    if (!SESSION.lobbyNet){
-      SESSION.lobbyNet = net3;
-    }
+    if (!isJordan(ip)) return BLOCK;
+
+    if (!SESSION.ispNet) SESSION.ispNet = isp2;
+    if (isp2 !== SESSION.ispNet) return BLOCK;
+
+    if (!SESSION.lobbyNet) SESSION.lobbyNet = net3;
 
     return PROXY;
   }
 
-  // =========================================================
-  // MATCH LOCK (4 segments)
-  // =========================================================
+  // ================= MATCH (Forced Retry Mode) =================
 
   if (isMatch){
 
     if (!SESSION.matchNet){
+
+      if (!isJordan(ip)) return BLOCK;
+
+      if (!SESSION.ispNet) SESSION.ispNet = isp2;
+      if (isp2 !== SESSION.ispNet) return BLOCK;
+
       SESSION.matchNet = net4;
       SESSION.inMatch  = true;
+
       return PROXY;
     }
 
+    if (isp2 !== SESSION.ispNet) return BLOCK;
     if (net4 !== SESSION.matchNet) return BLOCK;
 
     return PROXY;
