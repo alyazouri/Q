@@ -1,77 +1,80 @@
 // ============================================================
-//  JORDAN PUBG MOBILE — FULL STRICT LOCK v6.0
-//  IPv6 ONLY — Exact Prefix Lock
-//  Match: /64
-//  Lobby: /48
-//  Only Listed Prefixes Allowed
+// PUBG HARDCORE ISP + REGION LOCK
+// Lobby  = 3 segments
+// Match  = 4 segments
+// ISP Lock Enabled
+// Ultra Secure Version
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
 var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
-// ============================================================
-// SESSION STATE
-// ============================================================
 var SESSION = {
-  matchNet:  null,
-  matchHost: null,
-  lobbyNet:  null
+  ispNet:   null,  // أول خانتين (ISP)
+  lobbyNet: null,  // أول 3 خانات
+  matchNet: null,  // أول 4 خانات
+  inMatch:  false
 };
 
 // ============================================================
-// PRIORITY
+// BASIC CHECK
 // ============================================================
-var PRIORITY = {
 
-  CRITICAL: /match|battle|classic|ranked|unranked|competitive|arena|tdm|teamdeathmatch|gungame|domination|assault|payload|metro|metroroyale|zombie|infection|evoground|ultimate|royale|wow|cheer|training|erangel|livik|miramar|sanhok|vikendi|karakin|nusa|rondo|fpp|tpp|squad|duo|solo|war|sniper|quickmatch|arcade|battlefield|clash|gunfight|dispatch|ingame|gaming|realtime|gamesvr|gsvoice|relay/i,
-
-  SECURITY:  /anticheat|verify|shield|security|ban|compliance|safeguard|integrity/i,
-
-  LOBBY:     /lobby|matchmaking|queue|login|auth|region|gateway|session|profile|inventory|store|catalog|news|patch|update|cdn|asset|config|feedback/i
-};
-
-// ============================================================
-// EXCLUSIONS
-// ============================================================
-function isYouTube(h) {
-  return shExpMatch(h, "*.youtube.com") ||
-         shExpMatch(h, "*.googlevideo.com") ||
-         shExpMatch(h, "*.ytimg.com") ||
-         shExpMatch(h, "*.youtube-nocookie.com") ||
-         shExpMatch(h, "youtu.be");
-}
-
-function isGitHub(h) {
-  return shExpMatch(h, "github.com") ||
-         shExpMatch(h, "*.github.com") ||
-         shExpMatch(h, "*.githubusercontent.com") ||
-         shExpMatch(h, "*.githubassets.com") ||
-         shExpMatch(h, "api.github.com");
-}
-
-// ============================================================
-// EXACT ALLOWED PREFIXES (From Screenshots)
-// ============================================================
-var ALLOWED_PREFIXES = [
-  "2a01:9700","2a00:18d8","2001:32c0"
-];
-
-// ============================================================
-// HELPERS
-// ============================================================
-function isIPv6(ip) {
+function isIPv6(ip){
   return ip && ip.indexOf(":") !== -1;
 }
 
-function isAllowedIPv6(ip) {
-  if (!isIPv6(ip)) return false;
-  var ipLow = ip.toLowerCase();
-  for (var i = 0; i < ALLOWED_PREFIXES.length; i++) {
-    if (ipLow.indexOf(ALLOWED_PREFIXES[i]) === 0) return true;
+// ============================================================
+// EXPAND IPv6 (:: support)
+// ============================================================
+
+function expandIPv6(address){
+
+  if (!address || address.indexOf(":") === -1) return address;
+
+  var parts = address.split("::");
+  var full = [];
+
+  if (parts.length === 2){
+    var left  = parts[0] ? parts[0].split(":") : [];
+    var right = parts[1] ? parts[1].split(":") : [];
+    var missing = 8 - (left.length + right.length);
+
+    full = left;
+    for (var i=0;i<missing;i++) full.push("0000");
+    full = full.concat(right);
+  } else {
+    full = address.split(":");
   }
-  return false;
+
+  for (var j=0;j<full.length;j++){
+    while(full[j].length < 4) full[j] = "0" + full[j];
+  }
+
+  return full.join(":").toLowerCase();
 }
+
+// ============================================================
+// FAST PREFIX CHECK (Jordan Only)
+// ============================================================
+
+function isAllowedIPv6(ip){
+
+  if (!isIPv6(ip)) return false;
+
+  ip = expandIPv6(ip);
+
+  return (
+    ip.startsWith("2a01:9700:") ||
+    ip.startsWith("2a00:18d8:") ||
+    ip.startsWith("2001:32c0:")
+  );
+}
+
+// ============================================================
+// PUBG DETECTION
+// ============================================================
 
 function isPUBG(h,u){
   return /pubg|tencent|krafton|lightspeed|levelinfinite/i.test(h+u);
@@ -80,63 +83,75 @@ function isPUBG(h,u){
 // ============================================================
 // MAIN
 // ============================================================
-function FindProxyForURL(url, host) {
 
-  var ip = "";
+function FindProxyForURL(url, host){
+
+  var ip="";
   try { ip = dnsResolve(host); } catch(e){ ip=""; }
 
-  // Local
   if (isPlainHostName(host)) return DIRECT;
-
-  // Exclusions
-  if (isYouTube(host)) return DIRECT;
-  if (isGitHub(host)) return DIRECT;
-
-  // Non PUBG → Direct
   if (!isPUBG(host,url)) return DIRECT;
-
-  // Block IPv4
   if (!ip || !isIPv6(ip)) return BLOCK;
-
-  // Block if not in allowed prefixes
   if (!isAllowedIPv6(ip)) return BLOCK;
+
+  var fullIP = expandIPv6(ip);
+  var parts  = fullIP.split(":");
+
+  var isp2  = parts.slice(0,2).join(":"); // ISP
+  var net3  = parts.slice(0,3).join(":"); // Lobby
+  var net4  = parts.slice(0,4).join(":"); // Match
 
   var data = (host+url).toLowerCase();
 
-  var isCritical = PRIORITY.CRITICAL.test(data);
-  var isSecurity = PRIORITY.SECURITY.test(data);
-  var isLobby    = PRIORITY.LOBBY.test(data);
+  var isLobby = /lobby|login|auth|session|matchmaking|queue|profile|inventory|store|friends|party|clan|chat|update|cdn/i.test(data);
 
-  var parts = ip.split(":");
+  var isMatch = /match|battle|classic|ranked|arena|tdm|metro|royale|war|arcade|ingame|gamesvr|relay/i.test(data);
 
-  // ===== MATCH / SECURITY → /64 lock =====
-  if (isCritical || isSecurity) {
+  // =========================================================
+  // ISP LOCK (أقسى مستوى)
+  // =========================================================
 
-    var net64 = parts.slice(0,3).join(":");
+  if (!SESSION.ispNet){
+    SESSION.ispNet = isp2;
+  }
 
-    if (!SESSION.matchNet) {
-      SESSION.matchNet  = net64;
-      SESSION.matchHost = host;
-      return PROXY;
+  if (isp2 !== SESSION.ispNet) return BLOCK;
+
+  // =========================================================
+  // AUTO RESET AFTER MATCH
+  // =========================================================
+
+  if (!isMatch && SESSION.inMatch){
+    SESSION.matchNet = null;
+    SESSION.inMatch  = false;
+  }
+
+  // =========================================================
+  // LOBBY LOCK (3 segments)
+  // =========================================================
+
+  if (isLobby){
+
+    if (!SESSION.lobbyNet){
+      SESSION.lobbyNet = net3;
     }
-
-    if (host !== SESSION.matchHost) return BLOCK;
-    if (net64 !== SESSION.matchNet) return BLOCK;
 
     return PROXY;
   }
 
-  // ===== LOBBY → /48 lock =====
-  if (isLobby) {
+  // =========================================================
+  // MATCH LOCK (4 segments)
+  // =========================================================
 
-    var net48 = parts.slice(0,2).join(":");
+  if (isMatch){
 
-    if (!SESSION.lobbyNet) {
-      SESSION.lobbyNet = net48;
+    if (!SESSION.matchNet){
+      SESSION.matchNet = net4;
+      SESSION.inMatch  = true;
       return PROXY;
     }
 
-    if (net48 !== SESSION.lobbyNet) return BLOCK;
+    if (net4 !== SESSION.matchNet) return BLOCK;
 
     return PROXY;
   }
