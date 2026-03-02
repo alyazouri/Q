@@ -3,6 +3,7 @@
 // Lobby  = 3 segments
 // Match  = 4 segments
 // ISP Lock + Forced Retry
+// + Global Country Blocks
 // ============================================================
 
 var PROXY  = "PROXY 46.185.131.218:20001";
@@ -59,7 +60,13 @@ function isJordan(ip){
   return (
     ip.startsWith("2a01:9700:") ||
     ip.startsWith("2a00:18d8:") ||
-    ip.startsWith("2001:32c0:")
+    ip.startsWith("2001:32c0:") ||
+    ip.startsWith("2a02:2788:") ||
+    ip.startsWith("2a02:9b0:")  ||
+    ip.startsWith("2a03:2e00:") ||
+    ip.startsWith("2a03:9a00:") ||
+    ip.startsWith("2a03:dc00:") ||
+    ip.startsWith("2a10:1c00:")
   );
 }
 
@@ -81,32 +88,61 @@ function FindProxyForURL(url, host){
   if (!ip || !isIPv6(ip)) return BLOCK;
 
   var fullIP = expandIPv6(ip);
-  var parts  = fullIP.split(":");
 
+  // ===== BLOCK ARUBA =====
+  if (
+    fullIP.startsWith("2a00:1450:") ||
+    fullIP.startsWith("2a00:bdc0:")  ||
+    fullIP.startsWith("2a00:13c0:")  ||
+    fullIP.startsWith("2a00:1fa0:")
+  ) return BLOCK;
+
+  // ===== BLOCK IRAN =====
+  if (
+    fullIP.startsWith("2a00:1a60:") ||
+    fullIP.startsWith("2a00:1b20:") ||
+    fullIP.startsWith("2a01:5ec0:") ||
+    fullIP.startsWith("2a03:3b40:")
+  ) return BLOCK;
+
+  // ===== BLOCK PAKISTAN =====
+  if (
+    fullIP.startsWith("2401:4900:") ||
+    fullIP.startsWith("2407:")
+  ) return BLOCK;
+
+  // ===== BLOCK AFGHANISTAN =====
+  if (
+    fullIP.startsWith("2400:3c00:") ||
+    fullIP.startsWith("2400:4f00:")
+  ) return BLOCK;
+
+  // ===== BLOCK LIBYA =====
+  if (
+    fullIP.startsWith("2c0f:f248:") ||
+    fullIP.startsWith("2c0f:f7c0:")
+  ) return BLOCK;
+
+  // ===== JORDAN ONLY =====
+  if (!isJordan(ip)) return BLOCK;
+
+  var parts  = fullIP.split(":");
   var isp2 = parts.slice(0,2).join(":");
   var net3 = parts.slice(0,3).join(":");
   var net4 = parts.slice(0,4).join(":");
 
   var data = (host+url).toLowerCase();
 
-  // ===== LOBBY شامل كامل =====
   var isLobby = /lobby|login|auth|session|gateway|region|matchmaking|queue|profile|inventory|store|shop|catalog|news|event|mission|reward|mail|friends|clan|chat|voice|party|team|config|settings|update|patch|cdn|asset|download|social|rank|leaderboard/i.test(data);
 
-  // ===== MATCH شامل كامل =====
   var isMatch = /match|battle|classic|ranked|unranked|competitive|arena|tdm|teamdeathmatch|gungame|domination|assault|payload|metro|metroroyale|zombie|infection|evoground|ultimate|royale|war|sniper|quickmatch|arcade|clash|gunfight|ingame|gamesvr|relay|realtime|spectate|observer|combat|survival/i.test(data);
-
-  // ================= AUTO RESET =================
 
   if (!isMatch && SESSION.inMatch){
     SESSION.matchNet = null;
     SESSION.inMatch  = false;
   }
 
-  // ================= LOBBY =================
-
   if (isLobby){
-
-    if (!isJordan(ip)) return BLOCK;
 
     if (!SESSION.ispNet) SESSION.ispNet = isp2;
     if (isp2 !== SESSION.ispNet) return BLOCK;
@@ -116,13 +152,9 @@ function FindProxyForURL(url, host){
     return PROXY;
   }
 
-  // ================= MATCH (Forced Retry Mode) =================
-
   if (isMatch){
 
     if (!SESSION.matchNet){
-
-      if (!isJordan(ip)) return BLOCK;
 
       if (!SESSION.ispNet) SESSION.ispNet = isp2;
       if (isp2 !== SESSION.ispNet) return BLOCK;
