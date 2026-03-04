@@ -280,14 +280,7 @@ function isJordanLobby(ip){
     ip.startsWith("2a03:6b01:8400:") ||
     ip.startsWith("2a03:6b01:8800:") ||
     ip.startsWith("2a03:6b01:9000:") ||
-    ip.startsWith("2a03:6b01:9400:") ||
-    ip.startsWith("2a03:6b01:a000:") ||
-
-    // ================== Umniah / Batelco Jordan ==================
-    ip.startsWith("2a02:f780:") ||
-    ip.startsWith("2a02:f781:") ||
-    ip.startsWith("2a02:f782:") ||
-    ip.startsWith("2a02:f783:")
+    ip.startsWith("2a03:6b01:9400:")
   );
 }
 
