@@ -79,18 +79,7 @@ function isJordanIPv6(fullIP) {
   if (
     fullIP.startsWith("2a01:9700:1700:") ||
     fullIP.startsWith("2a01:9700:1c00:") ||
-    fullIP.startsWith("2a01:9700:3100:") ||
-    fullIP.startsWith("2a01:9700:3200:") ||
-    fullIP.startsWith("2a01:9700:3300:") ||
-    fullIP.startsWith("2a01:9700:3400:") ||
-    fullIP.startsWith("2a01:9700:3500:") ||
-    fullIP.startsWith("2a01:9700:3800:") ||
-    fullIP.startsWith("2a01:9700:3900:") ||
-    fullIP.startsWith("2a01:9700:3a00:") ||
-    fullIP.startsWith("2a01:9700:3b00:") ||
-    fullIP.startsWith("2a01:9700:3c00:") ||
-    fullIP.startsWith("2a01:9700:3d00:") ||
-    fullIP.startsWith("2a01:9700:3e00:") ||
+    
     fullIP.startsWith("2a01:9700:3f00:") ||
     fullIP.startsWith("2a01:9700:4000:") ||
     fullIP.startsWith("2a01:9700:4100:") ||
@@ -108,73 +97,17 @@ function isJordanIPv6(fullIP) {
     fullIP.startsWith("2a01:9700:4d00:") ||
     fullIP.startsWith("2a01:9700:4e00:") ||
     fullIP.startsWith("2a01:9700:4f00:") ||
-    fullIP.startsWith("2a01:9700:5000:") ||
-    fullIP.startsWith("2a01:9700:5100:") ||
-    fullIP.startsWith("2a01:9700:5200:") ||
-    fullIP.startsWith("2a01:9700:5300:") ||
-    fullIP.startsWith("2a01:9700:5400:") ||
-    fullIP.startsWith("2a01:9700:5500:") ||
-    fullIP.startsWith("2a01:9700:5600:") ||
-    fullIP.startsWith("2a01:9700:5700:") ||
-    fullIP.startsWith("2a01:9700:5800:") ||
-    fullIP.startsWith("2a01:9700:5900:") ||
-    fullIP.startsWith("2a01:9700:5a00:") ||
-    fullIP.startsWith("2a01:9700:5b00:") ||
-    fullIP.startsWith("2a01:9700:5c00:") ||
-    fullIP.startsWith("2a01:9700:5e00:") ||
-    fullIP.startsWith("2a01:9700:6000:") ||
-    fullIP.startsWith("2a01:9700:6100:") ||
-    fullIP.startsWith("2a01:9700:6200:") ||
-    fullIP.startsWith("2a01:9700:6300:") ||
-    fullIP.startsWith("2a01:9700:6400:") ||
-    fullIP.startsWith("2a01:9700:6500:") ||
-    fullIP.startsWith("2a01:9700:6700:") ||
-    fullIP.startsWith("2a01:9700:6800:") ||
-    fullIP.startsWith("2a01:9700:6900:") ||
-    fullIP.startsWith("2a01:9700:6a00:") ||
-    fullIP.startsWith("2a01:9700:6b00:") ||
-    fullIP.startsWith("2a01:9700:6c00:") ||
-    fullIP.startsWith("2a01:9700:6e00:") ||
-    fullIP.startsWith("2a01:9700:6f00:") ||
-    fullIP.startsWith("2a01:9700:7000:") ||
-    fullIP.startsWith("2a01:9700:7100:") ||
-    fullIP.startsWith("2a01:9700:7200:") ||
-    fullIP.startsWith("2a01:9700:7300:") ||
-    fullIP.startsWith("2a01:9700:7400:") ||
-    fullIP.startsWith("2a01:9700:7500:") ||
-    fullIP.startsWith("2a01:9700:7600:") ||
-    fullIP.startsWith("2a01:9700:7a00:") ||
-    fullIP.startsWith("2a01:9700:8000:") ||
-    fullIP.startsWith("2a01:9700:8100:") ||
-    fullIP.startsWith("2a01:9700:8400:") ||
-    fullIP.startsWith("2a01:9700:8500:") ||
-    fullIP.startsWith("2a01:9700:8600:") ||
-    fullIP.startsWith("2a01:9700:9000:") ||
-    fullIP.startsWith("2a01:9700:9100:") ||
-    fullIP.startsWith("2a01:9700:9200:") ||
-    fullIP.startsWith("2a01:9700:9300:") ||
-    fullIP.startsWith("2a01:9700:9400:")
+    fullIP.startsWith("2a01:9700:5000:")
   ) return true;
 
   // ================== Jordan Telecom / JT (AS8697) ==================
   // النطاق: 2a00:18d8::/32
   if (
-    fullIP.startsWith("2a00:18d8:0040:") ||
-    fullIP.startsWith("2a00:18d8:0050:") ||
-    fullIP.startsWith("2a00:18d8:0060:") ||
-    fullIP.startsWith("2a00:18d8:0070:") ||
-    fullIP.startsWith("2a00:18d8:0080:") ||
-    fullIP.startsWith("2a00:18d8:0090:") ||
-    fullIP.startsWith("2a00:18d8:00c0:") ||
-    fullIP.startsWith("2a00:18d8:00d0:") ||
-    fullIP.startsWith("2a00:18d8:00e0:") ||
-    fullIP.startsWith("2a00:18d8:00f0:") ||
-    fullIP.startsWith("2a00:18d8:0100:") ||
-    fullIP.startsWith("2a00:18d8:0110:") ||
-    fullIP.startsWith("2a00:18d8:0120:") ||
-    fullIP.startsWith("2a00:18d8:0130:") ||
-    fullIP.startsWith("2a00:18d8:0140:") ||
-    fullIP.startsWith("2a00:18d8:0150:")
+ fullIP.startsWith("2a03:6b01:4000:") ||
+    fullIP.startsWith("2a03:6b01:4400:") ||
+    fullIP.startsWith("2a03:6b01:6000:") ||
+    fullIP.startsWith("2a03:6b01:6400:") ||
+    fullIP.startsWith("2a03:6b01:8000:")
   ) return true;
 
   // ================== Zain Jordan (AS48832) ==================
