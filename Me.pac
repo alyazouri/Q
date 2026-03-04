@@ -55,9 +55,11 @@ function expandIPv6(address){
 function isJordanLobby(ip){
 
   ip = expandIPv6(ip);
- ip.startsWith("2a03:6b01:") ||
- ip.startsWith("2a01:1d0:") ||
- ip.startsWith("2a0a:2740:")
+    ip.startsWith("2a03:6b01:4000:") ||
+    ip.startsWith("2a03:6b01:4400:") ||
+    ip.startsWith("2a03:6b01:6000:") ||
+    ip.startsWith("2a03:6b01:6400:") ||
+    ip.startsWith("2a03:6b01:8000:")
   return (
 
   );
