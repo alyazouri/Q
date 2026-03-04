@@ -57,131 +57,164 @@ function isJordanLobby(ip){
   ip = expandIPv6(ip);
 
   return (
-    // ================== Zain Jordan (AS48832) ==================
-    ip.startsWith("2a03:6b01:4000:") ||
-    ip.startsWith("2a03:6b01:4400:") ||
-    ip.startsWith("2a03:6b01:6000:") ||
-    ip.startsWith("2a03:6b01:6400:") ||
-    ip.startsWith("2a03:6b01:8000:") ||
-    // ================== Orange Jordan (AS8376) - الأكبر والأفضل ==================
-    ip.startsWith("2a01:9700:1700:") ||
-    ip.startsWith("2a01:9700:1c00:") ||
-    ip.startsWith("2a01:9700:3100:") ||
-    ip.startsWith("2a01:9700:3200:") ||
-    ip.startsWith("2a01:9700:3300:") ||
-    ip.startsWith("2a01:9700:3400:") ||
-    ip.startsWith("2a01:9700:3500:") ||
-    ip.startsWith("2a01:9700:3800:") ||
-    ip.startsWith("2a01:9700:3900:") ||
-    ip.startsWith("2a01:9700:3a00:") ||
-    ip.startsWith("2a01:9700:3b00:") ||
-    ip.startsWith("2a01:9700:3c00:") ||
-    ip.startsWith("2a01:9700:3d00:") ||
-    ip.startsWith("2a01:9700:3e00:") ||
-    ip.startsWith("2a01:9700:3f00:") ||
-    ip.startsWith("2a01:9700:4000:") ||
-    ip.startsWith("2a01:9700:4100:") ||
-    ip.startsWith("2a01:9700:4200:") ||
-    ip.startsWith("2a01:9700:4300:") ||
-    ip.startsWith("2a01:9700:4400:") ||
-    ip.startsWith("2a01:9700:4500:") ||
-    ip.startsWith("2a01:9700:4600:") ||
-    ip.startsWith("2a01:9700:4700:") ||
-    ip.startsWith("2a01:9700:4710:") ||   // اللي طلبتو في المثال
-    ip.startsWith("2a01:9700:4800:") ||   // اللي طلبتو في المثال
-    ip.startsWith("2a01:9700:4900:") ||
-    ip.startsWith("2a01:9700:4a00:") ||
-    ip.startsWith("2a01:9700:4b00:") ||
-    ip.startsWith("2a01:9700:4d00:") ||
-    ip.startsWith("2a01:9700:4e00:") ||
-    ip.startsWith("2a01:9700:4f00:") ||
-    ip.startsWith("2a01:9700:5000:") ||
-    ip.startsWith("2a01:9700:5100:") ||
-    ip.startsWith("2a01:9700:5200:") ||
-    ip.startsWith("2a01:9700:5300:") ||
-    ip.startsWith("2a01:9700:5400:") ||
-    ip.startsWith("2a01:9700:5500:") ||
-    ip.startsWith("2a01:9700:5600:") ||
-    ip.startsWith("2a01:9700:5700:") ||
-    ip.startsWith("2a01:9700:5800:") ||
-    ip.startsWith("2a01:9700:5900:") ||
-    ip.startsWith("2a01:9700:5a00:") ||
-    ip.startsWith("2a01:9700:5b00:") ||
-    ip.startsWith("2a01:9700:5c00:") ||
-    ip.startsWith("2a01:9700:5e00:") ||
-    ip.startsWith("2a01:9700:6000:") ||
-    ip.startsWith("2a01:9700:6100:") ||
-    ip.startsWith("2a01:9700:6200:") ||
-    ip.startsWith("2a01:9700:6300:") ||
-    ip.startsWith("2a01:9700:6400:") ||
-    ip.startsWith("2a01:9700:6500:") ||
-    ip.startsWith("2a01:9700:6700:") ||
-    ip.startsWith("2a01:9700:6800:") ||
-    ip.startsWith("2a01:9700:6900:") ||
-    ip.startsWith("2a01:9700:6a00:") ||
-    ip.startsWith("2a01:9700:6b00:") ||
-    ip.startsWith("2a01:9700:6c00:") ||
-    ip.startsWith("2a01:9700:6e00:") ||
-    ip.startsWith("2a01:9700:6f00:") ||
-    ip.startsWith("2a01:9700:7000:") ||
-    ip.startsWith("2a01:9700:7100:") ||
-    ip.startsWith("2a01:9700:7200:") ||
-    ip.startsWith("2a01:9700:7300:") ||
-    ip.startsWith("2a01:9700:7400:") ||
-    ip.startsWith("2a01:9700:7500:") ||
-    ip.startsWith("2a01:9700:7600:") ||
-    ip.startsWith("2a01:9700:7a00:") ||
-    ip.startsWith("2a01:9700:8000:") ||
-    ip.startsWith("2a01:9700:8100:") ||
-    ip.startsWith("2a01:9700:8400:") ||
-    ip.startsWith("2a01:9700:8500:") ||
-    ip.startsWith("2a01:9700:8600:") ||
-    ip.startsWith("2a01:9700:9000:") ||
-    ip.startsWith("2a01:9700:9100:") ||
-    ip.startsWith("2a01:9700:9200:") ||
-    ip.startsWith("2a01:9700:9300:") ||
-    ip.startsWith("2a01:9700:9400:") ||
-
-    // ================== Jordan Telecom (JT - AS8697) ==================
-    ip.startsWith("2a00:18d8:40:") ||
-    ip.startsWith("2a00:18d8:50:") ||
-    ip.startsWith("2a00:18d8:60:") ||
-    ip.startsWith("2a00:18d8:70:") ||
-    ip.startsWith("2a00:18d8:80:") ||
-    ip.startsWith("2a00:18d8:90:") ||
-    ip.startsWith("2a00:18d8:c0:") ||
-    ip.startsWith("2a00:18d8:d0:") ||
-    ip.startsWith("2a00:18d8:e0:") ||
-    ip.startsWith("2a00:18d8:f0:") ||
-    ip.startsWith("2a00:18d8:100:") ||
-    ip.startsWith("2a00:18d8:110:") ||
-    ip.startsWith("2a00:18d8:120:") ||
-    ip.startsWith("2a00:18d8:130:") ||
-    ip.startsWith("2a00:18d8:140:") ||
-    ip.startsWith("2a00:18d8:150:")
+ip.startsWith("2a01:9700:1700:") ||
+ip.startsWith("2a01:9700:1c00:") ||
+ip.startsWith("2a01:9700:3100:") ||
+ip.startsWith("2a01:9700:3200:") ||
+ip.startsWith("2a01:9700:3300:") ||
+ip.startsWith("2a01:9700:3400:") ||
+ip.startsWith("2a01:9700:3500:") ||
+ip.startsWith("2a01:9700:3800:") ||
+ip.startsWith("2a01:9700:3900:") ||
+ip.startsWith("2a01:9700:3a00:") ||
+ip.startsWith("2a01:9700:3b00:") ||
+ip.startsWith("2a01:9700:3c00:") ||
+ip.startsWith("2a01:9700:3d00:") ||
+ip.startsWith("2a01:9700:3e00:") ||
+ip.startsWith("2a01:9700:3f00:") ||
+ip.startsWith("2a01:9700:4000:") ||
+ip.startsWith("2a01:9700:4100:") ||
+ip.startsWith("2a01:9700:4200:") ||
+ip.startsWith("2a01:9700:4300:") ||
+ip.startsWith("2a01:9700:4400:") ||
+ip.startsWith("2a01:9700:4500:") ||
+ip.startsWith("2a01:9700:4600:") ||
+ip.startsWith("2a01:9700:4700:") ||
+ip.startsWith("2a01:9700:4800:") ||
+ip.startsWith("2a01:9700:4900:") ||
+ip.startsWith("2a01:9700:4a00:") ||
+ip.startsWith("2a01:9700:4b00:") ||
+ip.startsWith("2a01:9700:4d00:") ||
+ip.startsWith("2a01:9700:4e00:") ||
+ip.startsWith("2a01:9700:4f00:") ||
+ip.startsWith("2a01:9700:5000:") ||
+ip.startsWith("2a01:9700:5100:") ||
+ip.startsWith("2a01:9700:5200:") ||
+ip.startsWith("2a01:9700:5300:") ||
+ip.startsWith("2a01:9700:5400:") ||
+ip.startsWith("2a01:9700:5500:") ||
+ip.startsWith("2a01:9700:5600:") ||
+ip.startsWith("2a01:9700:5700:") ||
+ip.startsWith("2a01:9700:5800:") ||
+ip.startsWith("2a01:9700:5900:") ||
+ip.startsWith("2a01:9700:5a00:") ||
+ip.startsWith("2a01:9700:5b00:") ||
+ip.startsWith("2a01:9700:5c00:") ||
+ip.startsWith("2a01:9700:5e00:") ||
+ip.startsWith("2a01:9700:6000:") ||
+ip.startsWith("2a01:9700:6100:") ||
+ip.startsWith("2a01:9700:6200:") ||
+ip.startsWith("2a01:9700:6300:") ||
+ip.startsWith("2a01:9700:6400:") ||
+ip.startsWith("2a01:9700:6500:") ||
+ip.startsWith("2a01:9700:6700:") ||
+ip.startsWith("2a01:9700:6800:") ||
+ip.startsWith("2a01:9700:6900:") ||
+ip.startsWith("2a01:9700:6a00:") ||
+ip.startsWith("2a01:9700:6b00:") ||
+ip.startsWith("2a01:9700:6c00:") ||
+ip.startsWith("2a01:9700:6e00:") ||
+ip.startsWith("2a01:9700:6f00:") ||
+ip.startsWith("2a01:9700:7000:") ||
+ip.startsWith("2a01:9700:7100:") ||
+ip.startsWith("2a01:9700:7200:") ||
+ip.startsWith("2a01:9700:7300:") ||
+ip.startsWith("2a01:9700:7400:") ||
+ip.startsWith("2a01:9700:7500:") ||
+ip.startsWith("2a01:9700:7600:") ||
+ip.startsWith("2a01:9700:7a00:") ||
+ip.startsWith("2a01:9700:8000:") ||
+ip.startsWith("2a01:9700:8100:") ||
+ip.startsWith("2a01:9700:8400:") ||
+ip.startsWith("2a01:9700:8500:") ||
+ip.startsWith("2a01:9700:8600:") ||
+ip.startsWith("2a01:9700:9000:") ||
+ip.startsWith("2a01:9700:9100:") ||
+ip.startsWith("2a01:9700:9200:") ||
+ip.startsWith("2a01:9700:9300:") ||
+ip.startsWith("2a01:9700:9400:")
   );
 }
 
 function isJordanMatch(ip){
 
   ip = expandIPv6(ip);
-
-  return (ip.startsWith("2a00:18d8:40:") ||
-    ip.startsWith("2a00:18d8:50:") ||
-    ip.startsWith("2a00:18d8:60:") ||
-    ip.startsWith("2a00:18d8:70:") ||
-    ip.startsWith("2a00:18d8:80:") ||
-    ip.startsWith("2a00:18d8:90:") ||
-    ip.startsWith("2a00:18d8:c0:") ||
-    ip.startsWith("2a00:18d8:d0:") ||
-    ip.startsWith("2a00:18d8:e0:") ||
-    ip.startsWith("2a00:18d8:f0:") ||
-    ip.startsWith("2a00:18d8:100:") ||
-    ip.startsWith("2a00:18d8:110:") ||
-    ip.startsWith("2a00:18d8:120:") ||
-    ip.startsWith("2a00:18d8:130:") ||
-    ip.startsWith("2a00:18d8:140:") ||
-    ip.startsWith("2a00:18d8:150:")
+ip.startsWith("2a01:9700:1700:") ||
+ip.startsWith("2a01:9700:1c00:") ||
+ip.startsWith("2a01:9700:3100:") ||
+ip.startsWith("2a01:9700:3200:") ||
+ip.startsWith("2a01:9700:3300:") ||
+ip.startsWith("2a01:9700:3400:") ||
+ip.startsWith("2a01:9700:3500:") ||
+ip.startsWith("2a01:9700:3800:") ||
+ip.startsWith("2a01:9700:3900:") ||
+ip.startsWith("2a01:9700:3a00:") ||
+ip.startsWith("2a01:9700:3b00:") ||
+ip.startsWith("2a01:9700:3c00:") ||
+ip.startsWith("2a01:9700:3d00:") ||
+ip.startsWith("2a01:9700:3e00:") ||
+ip.startsWith("2a01:9700:3f00:") ||
+ip.startsWith("2a01:9700:4000:") ||
+ip.startsWith("2a01:9700:4100:") ||
+ip.startsWith("2a01:9700:4200:") ||
+ip.startsWith("2a01:9700:4300:") ||
+ip.startsWith("2a01:9700:4400:") ||
+ip.startsWith("2a01:9700:4500:") ||
+ip.startsWith("2a01:9700:4600:") ||
+ip.startsWith("2a01:9700:4700:") ||
+ip.startsWith("2a01:9700:4800:") ||
+ip.startsWith("2a01:9700:4900:") ||
+ip.startsWith("2a01:9700:4a00:") ||
+ip.startsWith("2a01:9700:4b00:") ||
+ip.startsWith("2a01:9700:4d00:") ||
+ip.startsWith("2a01:9700:4e00:") ||
+ip.startsWith("2a01:9700:4f00:") ||
+ip.startsWith("2a01:9700:5000:") ||
+ip.startsWith("2a01:9700:5100:") ||
+ip.startsWith("2a01:9700:5200:") ||
+ip.startsWith("2a01:9700:5300:") ||
+ip.startsWith("2a01:9700:5400:") ||
+ip.startsWith("2a01:9700:5500:") ||
+ip.startsWith("2a01:9700:5600:") ||
+ip.startsWith("2a01:9700:5700:") ||
+ip.startsWith("2a01:9700:5800:") ||
+ip.startsWith("2a01:9700:5900:") ||
+ip.startsWith("2a01:9700:5a00:") ||
+ip.startsWith("2a01:9700:5b00:") ||
+ip.startsWith("2a01:9700:5c00:") ||
+ip.startsWith("2a01:9700:5e00:") ||
+ip.startsWith("2a01:9700:6000:") ||
+ip.startsWith("2a01:9700:6100:") ||
+ip.startsWith("2a01:9700:6200:") ||
+ip.startsWith("2a01:9700:6300:") ||
+ip.startsWith("2a01:9700:6400:") ||
+ip.startsWith("2a01:9700:6500:") ||
+ip.startsWith("2a01:9700:6700:") ||
+ip.startsWith("2a01:9700:6800:") ||
+ip.startsWith("2a01:9700:6900:") ||
+ip.startsWith("2a01:9700:6a00:") ||
+ip.startsWith("2a01:9700:6b00:") ||
+ip.startsWith("2a01:9700:6c00:") ||
+ip.startsWith("2a01:9700:6e00:") ||
+ip.startsWith("2a01:9700:6f00:") ||
+ip.startsWith("2a01:9700:7000:") ||
+ip.startsWith("2a01:9700:7100:") ||
+ip.startsWith("2a01:9700:7200:") ||
+ip.startsWith("2a01:9700:7300:") ||
+ip.startsWith("2a01:9700:7400:") ||
+ip.startsWith("2a01:9700:7500:") ||
+ip.startsWith("2a01:9700:7600:") ||
+ip.startsWith("2a01:9700:7a00:") ||
+ip.startsWith("2a01:9700:8000:") ||
+ip.startsWith("2a01:9700:8100:") ||
+ip.startsWith("2a01:9700:8400:") ||
+ip.startsWith("2a01:9700:8500:") ||
+ip.startsWith("2a01:9700:8600:") ||
+ip.startsWith("2a01:9700:9000:") ||
+ip.startsWith("2a01:9700:9100:") ||
+ip.startsWith("2a01:9700:9200:") ||
+ip.startsWith("2a01:9700:9300:") ||
+ip.startsWith("2a01:9700:9400:")
   );
 }
 
