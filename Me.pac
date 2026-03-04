@@ -57,6 +57,12 @@ function isJordanLobby(ip){
   ip = expandIPv6(ip);
 
   return (
+    // ================== Zain Jordan (AS48832) ==================
+    ip.startsWith("2a03:6b01:4000:") ||
+    ip.startsWith("2a03:6b01:4400:") ||
+    ip.startsWith("2a03:6b01:6000:") ||
+    ip.startsWith("2a03:6b01:6400:") ||
+    ip.startsWith("2a03:6b01:8000:") ||
     // ================== Orange Jordan (AS8376) - الأكبر والأفضل ==================
     ip.startsWith("2a01:9700:1700:") ||
     ip.startsWith("2a01:9700:1c00:") ||
@@ -152,14 +158,7 @@ function isJordanLobby(ip){
     ip.startsWith("2a00:18d8:120:") ||
     ip.startsWith("2a00:18d8:130:") ||
     ip.startsWith("2a00:18d8:140:") ||
-    ip.startsWith("2a00:18d8:150:") ||
-
-    // ================== Zain Jordan (AS48832) ==================
-    ip.startsWith("2a03:6b01:4000:") ||
-    ip.startsWith("2a03:6b01:4400:") ||
-    ip.startsWith("2a03:6b01:6000:") ||
-    ip.startsWith("2a03:6b01:6400:") ||
-    ip.startsWith("2a03:6b01:8000:")
+    ip.startsWith("2a00:18d8:150:")
   );
 }
 
@@ -167,12 +166,22 @@ function isJordanMatch(ip){
 
   ip = expandIPv6(ip);
 
-  return (
-    ip.startsWith("2a03:6b01:4000:") ||
-    ip.startsWith("2a03:6b01:4400:") ||
-    ip.startsWith("2a03:6b01:6000:") ||
-    ip.startsWith("2a03:6b01:6400:") ||
-    ip.startsWith("2a03:6b01:8000:")
+  return (ip.startsWith("2a00:18d8:40:") ||
+    ip.startsWith("2a00:18d8:50:") ||
+    ip.startsWith("2a00:18d8:60:") ||
+    ip.startsWith("2a00:18d8:70:") ||
+    ip.startsWith("2a00:18d8:80:") ||
+    ip.startsWith("2a00:18d8:90:") ||
+    ip.startsWith("2a00:18d8:c0:") ||
+    ip.startsWith("2a00:18d8:d0:") ||
+    ip.startsWith("2a00:18d8:e0:") ||
+    ip.startsWith("2a00:18d8:f0:") ||
+    ip.startsWith("2a00:18d8:100:") ||
+    ip.startsWith("2a00:18d8:110:") ||
+    ip.startsWith("2a00:18d8:120:") ||
+    ip.startsWith("2a00:18d8:130:") ||
+    ip.startsWith("2a00:18d8:140:") ||
+    ip.startsWith("2a00:18d8:150:")
   );
 }
 
