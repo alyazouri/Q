@@ -3,7 +3,7 @@
 // Enhanced with Jordan ISPs IPv4 Ranges
 // ============================================================
 
-var PROXY  = "PROXY 46.185.131.218:20001";
+var PROXY  = "PROXY 37.220.121.71:20001";
 var DIRECT = "DIRECT";
 var BLOCK  = "PROXY 0.0.0.0:0";
 
