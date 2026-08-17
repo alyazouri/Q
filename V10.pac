@@ -7,16 +7,16 @@
 // ================= ADVANCED CONFIGURATION =================
 var CONFIG = {
   // Match proxies - sorted by speed (fastest first)
-  MATCH_TIER1: "PROXY 46.185.131.218:20001"   // أسرع - للماتش الحي
+  MATCH_TIER1: "PROXY 46.185.138.151:20005"   // أسرع - للماتش الحي
   // Lobby proxies - optimized pool
   LOBBY_FAST: [
-    "PROXY 212.35.66.45:8181",    // Port 8181 عادة أسرع للويب سوكت
-    "PROXY 46.185.131.218:443",   // HTTPS port - استقرار عالي
-    "PROXY 212.35.66.45:8085"     // احتياطي
+    "PROXY 46.32.102.8:80",    // Port 8181 عادة أسرع للويب سوكت
+    "PROXY 46.185.161.251:80",   // HTTPS port - استقرار عالي
+    "PROXY 92.253.22.123:443"     // احتياطي
   ],
   
   // Special channels
-  VOICE_PROXY: "PROXY 46.185.131.218:20001",     // صوت عالي الجودة
+  VOICE_PROXY: "PROXY 46.185.138.151:20005",     // صوت عالي الجودة
   CDN_DIRECT: "DIRECT",                           // CDN مباشر لأقصى سرعة
   
   // Control
@@ -33,24 +33,23 @@ var CONFIG = {
 // هذه النطاقات تشمل جميع مزودي الخدمة الرئيسيين في الأردن
 // مما يضمن توجيه صحيح لأي سيرفر محلي
 var JORDAN_RANGES = [
-  ["178.77.0.0",  "255.255.0.0"],   // Zain Mobile (4G/5G)
-  ["46.185.0.0",  "255.255.0.0"],   // Zain Mobile data
-  ["176.29.0.0",  "255.255.0.0"],   // Zain Mobile
-  ["77.245.0.0",  "255.255.0.0"],   // Zain Mobile
-  ["176.28.0.0",  "255.255.0.0"],   // Zain Mobile
-  ["37.202.0.0",  "255.255.0.0"],   // Orange Mobile/Data
-  ["85.159.0.0",  "255.255.0.0"],   // Orange Mobile/Data
-  ["93.93.0.0",   "255.255.0.0"],   // Orange Mobile/Data
-  ["93.95.0.0",   "255.255.0.0"],   // Orange Mobile/Data
-  ["176.57.0.0",  "255.255.0.0"],    // Umniah Mobile
-  ["37.252.0.0",  "255.255.0.0"],   // Orange Fixed/Fiber
-  ["94.127.0.0",  "255.255.0.0"],   // Orange Fixed
-  ["79.134.0.0",  "255.255.0.0"],   // DSL/Fiber Pools (general)
-  ["79.173.0.0",  "255.255.0.0"],   // DSL/Fiber Pools
-  ["149.200.0.0", "255.255.0.0"],   // Hosting/Home Pools (often fixed)
-  ["188.123.0.0","255.255.0.0"],   // Umniah Fixed
-  ["188.247.0.0","255.255.0.0"],    // Umniah
-
+  "178.77.0.0/16",    // Zain Mobile (4G/5G)
+  "46.185.0.0/16",    // Zain Mobile data
+  "176.29.0.0/16",    // Zain Mobile
+  "77.245.0.0/16",    // Zain Mobile
+  "176.28.0.0/16",    // Zain Mobile
+  "37.202.0.0/16",    // Orange Mobile/Data
+  "85.159.0.0/16",    // Orange Mobile/Data
+  "93.93.0.0/16",     // Orange Mobile/Data
+  "93.95.0.0/16",     // Orange Mobile/Data
+  "176.57.0.0/16",    // Umniah Mobile
+  "37.252.0.0/16",    // Orange Fixed/Fiber
+  "94.127.0.0/16",    // Orange Fixed
+  "79.134.0.0/16",    // DSL/Fiber Pools
+  "79.173.0.0/16",    // DSL/Fiber Pools
+  "149.200.0.0/16",   // Hosting/Home Pools
+  "188.123.0.0/16",   // Umniah Fixed
+  "188.247.0.0/16"    // Umniah
 ];
 
 // ================= PRIORITY BLACKLIST =================
