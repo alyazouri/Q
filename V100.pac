@@ -1,52 +1,84 @@
 // ============================================================
-// GAME BOOSTER ALPHA v3.0
-// Jordan Network Priority PAC
-// IPv4 + IPv6 / ASN-based Network Profiles
+// GAME BOOSTER ALPHA v4.0
+// JORDAN ROUTE + ANTI-JITTER
+// IPv4 + IPv6
+// Sticky Proxy / Sticky Network / Stable Session
 // ============================================================
 
+
 // ============================================================
-// CONFIGURATION
+// CONFIG
 // ============================================================
 
 var CONFIG = {
 
   // ----------------------------------------------------------
-  // PROXY POOL
+  // PRIMARY PROXY
   // ----------------------------------------------------------
-
-  MATCH_TIER1: "PROXY 46.32.102.8:80",
-
-  LOBBY_FAST: [
+  // استخدم بروكسي واحد ثابت لتقليل تبدل المسار.
+  PRIMARY_PROXY:
     "PROXY 46.32.102.8:80",
+
+  // احتياطي فقط إذا فشل الأساسي.
+  // لا يتم تدويره أثناء الجلسة بشكل عشوائي.
+  BACKUP_PROXY:
     "PROXY 176.29.176.46:80",
-    "PROXY 77.245.13.126:80"
-  ],
 
-  VOICE_PROXY: "PROXY 46.32.102.8:80",
-
-  CDN_DIRECT: "DIRECT",
-
-  DIRECT: "DIRECT",
-
-  BLOCK: "PROXY 127.0.0.1:9",
+  SECONDARY_BACKUP:
+    "PROXY 77.245.13.126:80",
 
   // ----------------------------------------------------------
-  // SESSION
+  // DIRECT
   // ----------------------------------------------------------
 
-  DNS_CACHE_TIME: 600000,
-  STICKY_SESSION_TIME: 1800000,
+  DIRECT:
+    "DIRECT",
 
-  // لا تستخدم حظر عالمي واسع.
-  // يتم الحظر فقط عندما يكون الطلب PUBG
-  // والـIP غير مصنف ضمن الشبكات الأردنية.
-  AGGRESSIVE_BLOCK: false,
+  // ----------------------------------------------------------
+  // BLOCK
+  // ----------------------------------------------------------
 
-  // IPv6 مفعّل
-  ENABLE_IPV6: true,
+  BLOCK:
+    "PROXY 127.0.0.1:9",
 
-  // أولوية الشبكات الأردنية
-  JORDAN_ONLY_PRIORITY: true
+  // ----------------------------------------------------------
+  // CACHE
+  // ----------------------------------------------------------
+
+  DNS_CACHE_TIME:
+    600000,
+
+  // ----------------------------------------------------------
+  // STICKY SESSION
+  // ----------------------------------------------------------
+
+  STICKY_SESSION_TIME:
+    1800000,
+
+  // ----------------------------------------------------------
+  // ROUTE MODE
+  // ----------------------------------------------------------
+
+  STICKY_PROXY:
+    true,
+
+  STICKY_NETWORK:
+    true,
+
+  // ----------------------------------------------------------
+  // IPV6
+  // ----------------------------------------------------------
+
+  ENABLE_IPV6:
+    true,
+
+  // ----------------------------------------------------------
+  // IMPORTANT
+  // ----------------------------------------------------------
+  // لا تحظر كل IP غير أردني.
+  // لأن PUBG تعتمد على خدمات عالمية.
+  ALLOW_GLOBAL_SERVICES:
+    true
 };
 
 
@@ -62,20 +94,34 @@ var JORDAN_NETWORKS = [
 
   {
     asn: 48832,
-    name: "Zain Jordan",
-    country: "JO",
-    priority: 100,
+
+    name:
+      "Zain Jordan",
+
+    country:
+      "JO",
+
+    priority:
+      100,
 
     ipv4: [
+
       "46.32.96.0/19"
+
     ],
 
     ipv6: [
+
       "2a03:6b00::/40",
+
       "2a03:6b01::/34",
+
       "2a03:6b01:4000::/34",
+
       "2a03:6b01:8000::/34",
+
       "2a03:6b02:2000::/48"
+
     ]
   },
 
@@ -86,12 +132,20 @@ var JORDAN_NETWORKS = [
 
   {
     asn: 8697,
-    name: "Orange Jordan",
-    country: "JO",
-    priority: 95,
+
+    name:
+      "Orange Jordan",
+
+    country:
+      "JO",
+
+    priority:
+      95,
 
     ipv4: [
+
       "212.34.0.0/19"
+
     ],
 
     ipv6: []
@@ -104,12 +158,20 @@ var JORDAN_NETWORKS = [
 
   {
     asn: 47887,
-    name: "Damamax / Neutelecom",
-    country: "JO",
-    priority: 85,
+
+    name:
+      "Damamax / Neutelecom",
+
+    country:
+      "JO",
+
+    priority:
+      85,
 
     ipv4: [
+
       "81.28.112.0/20"
+
     ],
 
     ipv6: []
@@ -117,22 +179,35 @@ var JORDAN_NETWORKS = [
 
 
   // ==========================================================
-  // ZAIN JORDAN - ADDITIONAL PREFIXES
+  // ZAIN JORDAN ADDITIONAL
   // ==========================================================
 
   {
     asn: 42912,
-    name: "Zain Jordan",
-    country: "JO",
-    priority: 100,
+
+    name:
+      "Zain Jordan",
+
+    country:
+      "JO",
+
+    priority:
+      100,
 
     ipv4: [
+
       "178.77.148.0/24",
+
       "178.77.149.0/24",
+
       "178.77.150.0/24",
+
       "178.77.151.0/24",
+
       "178.77.154.0/24",
+
       "178.77.155.0/24"
+
     ],
 
     ipv6: []
@@ -147,37 +222,98 @@ var JORDAN_NETWORKS = [
 
 var SESSION = {
 
-  match: {
-    network: null,
-    networkName: null,
-    networkPriority: 0,
-    hostname: null,
-    proxy: null,
-    startTime: 0,
-    locked: false
-  },
+  // ----------------------------------------------------------
+  // PROXY
+  // ----------------------------------------------------------
 
-  dns: {},
+  proxyLocked:
+    false,
 
-  lobbyIndex: 0,
+  activeProxy:
+    null,
 
-  lobbyLastSwitch: 0,
+  proxyStartTime:
+    0,
+
+  // ----------------------------------------------------------
+  // NETWORK
+  // ----------------------------------------------------------
+
+  networkLocked:
+    false,
+
+  network:
+    null,
+
+  networkName:
+    null,
+
+  networkASN:
+    null,
+
+  networkPriority:
+    0,
+
+  // ----------------------------------------------------------
+  // MATCH
+  // ----------------------------------------------------------
+
+  matchLocked:
+    false,
+
+  matchHostname:
+    null,
+
+  matchNetwork:
+    null,
+
+  matchStartTime:
+    0,
+
+  // ----------------------------------------------------------
+  // DNS CACHE
+  // ----------------------------------------------------------
+
+  dns:
+    {},
+
+  // ----------------------------------------------------------
+  // COUNTERS
+  // ----------------------------------------------------------
 
   counters: {
-    matchRequests: 0,
-    lobbyRequests: 0,
-    jordanRequests: 0,
-    nonJordanRequests: 0,
-    blockedRequests: 0,
-    directRequests: 0,
-    ipv4Requests: 0,
-    ipv6Requests: 0
+
+    match:
+      0,
+
+    lobby:
+      0,
+
+    jordan:
+      0,
+
+    global:
+      0,
+
+    ipv4:
+      0,
+
+    ipv6:
+      0,
+
+    direct:
+      0,
+
+    blocked:
+      0
+
   }
+
 };
 
 
 // ============================================================
-// HOST CLEANER
+// CLEAN HOST
 // ============================================================
 
 function cleanHost(host) {
@@ -186,18 +322,22 @@ function cleanHost(host) {
     return "";
   }
 
-  var colonPos = host.indexOf(":");
+  var pos =
+    host.indexOf(":");
 
-  if (colonPos === -1) {
+  if (pos === -1) {
     return host;
   }
 
-  return host.substring(0, colonPos);
+  return host.substring(
+    0,
+    pos
+  );
 }
 
 
 // ============================================================
-// IPv4 UTILITIES
+// IPv4 CONVERSION
 // ============================================================
 
 function ipv4ToNumber(ip) {
@@ -206,16 +346,24 @@ function ipv4ToNumber(ip) {
     return null;
   }
 
-  var parts = ip.split(".");
+  var p =
+    ip.split(".");
 
-  if (parts.length !== 4) {
+  if (p.length !== 4) {
     return null;
   }
 
-  var a = parseInt(parts[0], 10);
-  var b = parseInt(parts[1], 10);
-  var c = parseInt(parts[2], 10);
-  var d = parseInt(parts[3], 10);
+  var a =
+    parseInt(p[0], 10);
+
+  var b =
+    parseInt(p[1], 10);
+
+  var c =
+    parseInt(p[2], 10);
+
+  var d =
+    parseInt(p[3], 10);
 
   if (
     isNaN(a) ||
@@ -241,19 +389,35 @@ function ipv4ToNumber(ip) {
 }
 
 
-function ipv4CIDRContains(ip, cidr) {
+// ============================================================
+// IPv4 CIDR MATCH
+// ============================================================
 
-  var slash = cidr.indexOf("/");
+function ipv4CIDRContains(
+  ip,
+  cidr
+) {
+
+  var slash =
+    cidr.indexOf("/");
 
   if (slash === -1) {
     return false;
   }
 
-  var network = cidr.substring(0, slash);
-  var prefix = parseInt(
-    cidr.substring(slash + 1),
-    10
-  );
+  var network =
+    cidr.substring(
+      0,
+      slash
+    );
+
+  var prefix =
+    parseInt(
+      cidr.substring(
+        slash + 1
+      ),
+      10
+    );
 
   if (
     isNaN(prefix) ||
@@ -263,12 +427,15 @@ function ipv4CIDRContains(ip, cidr) {
     return false;
   }
 
-  var ipNumber = ipv4ToNumber(ip);
-  var networkNumber = ipv4ToNumber(network);
+  var ipNum =
+    ipv4ToNumber(ip);
+
+  var netNum =
+    ipv4ToNumber(network);
 
   if (
-    ipNumber === null ||
-    networkNumber === null
+    ipNum === null ||
+    netNum === null
   ) {
     return false;
   }
@@ -277,33 +444,20 @@ function ipv4CIDRContains(ip, cidr) {
     return true;
   }
 
-  var shift = 32 - prefix;
+  var divisor =
+    Math.pow(
+      2,
+      32 - prefix
+    );
 
   return (
-    Math.floor(ipNumber / Math.pow(2, shift)) ===
-    Math.floor(networkNumber / Math.pow(2, shift))
+    Math.floor(
+      ipNum / divisor
+    ) ===
+    Math.floor(
+      netNum / divisor
+    )
   );
-}
-
-
-// ============================================================
-// IPv6 NORMALIZATION
-// ============================================================
-
-function normalizeIPv6(ip) {
-
-  if (!ip) {
-    return null;
-  }
-
-  ip = ip.toLowerCase();
-
-  // Remove IPv4-mapped suffix when possible
-  if (ip.indexOf(".") !== -1) {
-    return ip;
-  }
-
-  return ip;
 }
 
 
@@ -311,174 +465,186 @@ function normalizeIPv6(ip) {
 // IPv6 PREFIX MATCH
 // ============================================================
 
-function ipv6PrefixContains(ip, cidr) {
+function ipv6PrefixContains(
+  ip,
+  cidr
+) {
 
-  if (!ip || !cidr) {
+  if (
+    !ip ||
+    !cidr
+  ) {
     return false;
   }
 
-  ip = normalizeIPv6(ip);
-
-  var slash = cidr.indexOf("/");
+  var slash =
+    cidr.indexOf("/");
 
   if (slash === -1) {
     return false;
   }
 
-  var network = cidr.substring(0, slash)
-    .toLowerCase();
+  var network =
+    cidr.substring(
+      0,
+      slash
+    ).toLowerCase();
 
-  var prefixLength = parseInt(
-    cidr.substring(slash + 1),
-    10
-  );
+  var prefix =
+    parseInt(
+      cidr.substring(
+        slash + 1
+      ),
+      10
+    );
 
   if (
-    isNaN(prefixLength) ||
-    prefixLength < 0 ||
-    prefixLength > 128
+    isNaN(prefix) ||
+    prefix < 0 ||
+    prefix > 128
   ) {
     return false;
   }
 
   /*
-   * PAC implementations differ in their IPv6 support.
-   * Therefore we use hexadecimal prefix comparison.
+   * PAC engines have inconsistent IPv6 support.
+   * This implementation performs prefix comparison
+   * using hexadecimal groups.
    */
 
-  var ipParts = ip.split(":");
-  var netParts = network.split(":");
+  function expandIPv6(
+    address
+  ) {
 
-  var ipExpanded = [];
-  var netExpanded = [];
+    address =
+      address.toLowerCase();
 
-  var i;
+    var parts =
+      address.split("::");
 
-  // Expand IP
-  var ipCompression = ip.indexOf("::");
+    var result = [];
 
-  if (ipCompression !== -1) {
+    if (parts.length === 2) {
 
-    var ipSides = ip.split("::");
+      var left =
+        parts[0] ?
+        parts[0].split(":") :
+        [];
 
-    var left = ipSides[0] ?
-      ipSides[0].split(":") : [];
+      var right =
+        parts[1] ?
+        parts[1].split(":") :
+        [];
 
-    var right = ipSides[1] ?
-      ipSides[1].split(":") : [];
+      var missing =
+        8 -
+        left.length -
+        right.length;
 
-    var missing =
-      8 - left.length - right.length;
+      var i;
 
-    ipExpanded = left.slice();
+      for (
+        i = 0;
+        i < left.length;
+        i++
+      ) {
+        result.push(
+          left[i]
+        );
+      }
 
-    for (i = 0; i < missing; i++) {
-      ipExpanded.push("0");
+      for (
+        i = 0;
+        i < missing;
+        i++
+      ) {
+        result.push(
+          "0"
+        );
+      }
+
+      for (
+        i = 0;
+        i < right.length;
+        i++
+      ) {
+        result.push(
+          right[i]
+        );
+      }
+
+    } else {
+
+      result =
+        address.split(":");
     }
 
-    ipExpanded = ipExpanded.concat(right);
-
-  } else {
-
-    ipExpanded = ipParts.slice();
-  }
-
-
-  // Expand network
-  var netCompression = network.indexOf("::");
-
-  if (netCompression !== -1) {
-
-    var netSides = network.split("::");
-
-    var netLeft = netSides[0] ?
-      netSides[0].split(":") : [];
-
-    var netRight = netSides[1] ?
-      netSides[1].split(":") : [];
-
-    var netMissing =
-      8 - netLeft.length - netRight.length;
-
-    netExpanded = netLeft.slice();
-
-    for (i = 0; i < netMissing; i++) {
-      netExpanded.push("0");
+    while (
+      result.length < 8
+    ) {
+      result.push("0");
     }
 
-    netExpanded = netExpanded.concat(netRight);
-
-  } else {
-
-    netExpanded = netParts.slice();
+    return result;
   }
 
 
-  while (ipExpanded.length < 8) {
-    ipExpanded.push("0");
-  }
+  var ipParts =
+    expandIPv6(ip);
 
-  while (netExpanded.length < 8) {
-    netExpanded.push("0");
-  }
+  var netParts =
+    expandIPv6(network);
 
+  var remaining =
+    prefix;
 
-  var fullHex = "";
+  for (
+    var i = 0;
+    i < 8;
+    i++
+  ) {
 
-  for (i = 0; i < 8; i++) {
-
-    var ipHex = ipExpanded[i] || "0";
-    var netHex = netExpanded[i] || "0";
-
-    ipHex = ("0000" + ipHex).slice(-4);
-    netHex = ("0000" + netHex).slice(-4);
-
-    fullHex += ipHex + netHex;
-  }
-
-
-  var bitsRemaining = prefixLength;
-
-  for (i = 0; i < 8; i++) {
-
-    var ipBlock = fullHex.substring(
-      i * 8,
-      i * 8 + 4
-    );
-
-    var netBlock = fullHex.substring(
-      i * 8 + 4,
-      i * 8 + 8
-    );
-
-    var bitsForBlock =
-      Math.min(bitsRemaining, 16);
-
-    if (bitsForBlock <= 0) {
-      break;
+    if (remaining <= 0) {
+      return true;
     }
+
+    var bits =
+      Math.min(
+        remaining,
+        16
+      );
 
     var ipValue =
-      parseInt(ipBlock, 16);
+      parseInt(
+        ipParts[i] || "0",
+        16
+      );
 
     var netValue =
-      parseInt(netBlock, 16);
+      parseInt(
+        netParts[i] || "0",
+        16
+      );
 
-    var shift =
-      16 - bitsForBlock;
+    var divisor =
+      Math.pow(
+        2,
+        16 - bits
+      );
 
     if (
       Math.floor(
-        ipValue / Math.pow(2, shift)
+        ipValue / divisor
       ) !==
       Math.floor(
-        netValue / Math.pow(2, shift)
+        netValue / divisor
       )
     ) {
+
       return false;
     }
 
-    bitsRemaining -= bitsForBlock;
+    remaining -= bits;
   }
 
   return true;
@@ -486,19 +652,22 @@ function ipv6PrefixContains(ip, cidr) {
 
 
 // ============================================================
-// JORDAN NETWORK MATCHER
+// FIND JORDAN NETWORK
 // ============================================================
 
-function findJordanNetwork(ip) {
+function findJordanNetwork(
+  ip
+) {
 
   if (!ip) {
     return null;
   }
 
-  var isIPv6 =
+  var ipv6 =
     ip.indexOf(":") !== -1;
 
-  var bestMatch = null;
+  var best =
+    null;
 
   for (
     var i = 0;
@@ -510,7 +679,7 @@ function findJordanNetwork(ip) {
       JORDAN_NETWORKS[i];
 
     var ranges =
-      isIPv6 ?
+      ipv6 ?
       network.ipv6 :
       network.ipv4;
 
@@ -520,11 +689,11 @@ function findJordanNetwork(ip) {
       j++
     ) {
 
-      var matched;
+      var match;
 
-      if (isIPv6) {
+      if (ipv6) {
 
-        matched =
+        match =
           ipv6PrefixContains(
             ip,
             ranges[j]
@@ -532,35 +701,49 @@ function findJordanNetwork(ip) {
 
       } else {
 
-        matched =
+        match =
           ipv4CIDRContains(
             ip,
             ranges[j]
           );
       }
 
-      if (matched) {
+      if (match) {
 
         if (
-          !bestMatch ||
+          !best ||
           network.priority >
-          bestMatch.priority
+          best.priority
         ) {
 
-          bestMatch = {
-            asn: network.asn,
-            name: network.name,
-            country: network.country,
-            priority: network.priority,
-            cidr: ranges[j],
-            ipVersion: isIPv6 ? 6 : 4
+          best = {
+
+            asn:
+              network.asn,
+
+            name:
+              network.name,
+
+            country:
+              network.country,
+
+            priority:
+              network.priority,
+
+            cidr:
+              ranges[j],
+
+            ipVersion:
+              ipv6 ?
+              6 :
+              4
           };
         }
       }
     }
   }
 
-  return bestMatch;
+  return best;
 }
 
 
@@ -568,7 +751,9 @@ function findJordanNetwork(ip) {
 // DNS CACHE
 // ============================================================
 
-function fastResolve(hostname) {
+function fastResolve(
+  hostname
+) {
 
   var now =
     new Date().getTime();
@@ -579,7 +764,8 @@ function fastResolve(hostname) {
   if (cached) {
 
     if (
-      now - cached.time <
+      now -
+      cached.time <
       CONFIG.DNS_CACHE_TIME
     ) {
 
@@ -587,27 +773,35 @@ function fastResolve(hostname) {
     }
   }
 
-
-  var resolvedIP = null;
+  var ip =
+    null;
 
   try {
 
-    resolvedIP =
-      dnsResolve(hostname);
+    ip =
+      dnsResolve(
+        hostname
+      );
 
-    if (resolvedIP) {
+  } catch (e) {
 
-      SESSION.dns[hostname] = {
-        ip: resolvedIP,
-        time: now
-      };
+    ip =
+      null;
+  }
 
-      return resolvedIP;
-    }
 
-  } catch (error) {
+  if (ip) {
 
-    // Ignore DNS errors
+    SESSION.dns[hostname] = {
+
+      ip:
+        ip,
+
+      time:
+        now
+    };
+
+    return ip;
   }
 
 
@@ -624,51 +818,12 @@ function fastResolve(hostname) {
 
 
 // ============================================================
-// PROXY SELECTION
+// PUBG DETECTION
 // ============================================================
 
-function selectLobbyProxy(
-  hostname,
-  ip
+function isPUBGTraffic(
+  hostname
 ) {
-
-  var combined =
-    hostname + "|" + ip;
-
-  var hashValue = 0;
-
-  for (
-    var i = 0;
-    i < combined.length;
-    i++
-  ) {
-
-    hashValue =
-      ((hashValue << 5) -
-      hashValue) +
-      combined.charCodeAt(i);
-
-    hashValue =
-      hashValue & hashValue;
-  }
-
-  if (hashValue < 0) {
-    hashValue = -hashValue;
-  }
-
-  var index =
-    hashValue %
-    CONFIG.LOBBY_FAST.length;
-
-  return CONFIG.LOBBY_FAST[index];
-}
-
-
-// ============================================================
-// PUBG TRAFFIC DETECTION
-// ============================================================
-
-function isPUBGTraffic(hostname) {
 
   var keywords = [
 
@@ -685,13 +840,12 @@ function isPUBGTraffic(hostname) {
 
     "levelinfinite",
 
-    "intl",
     "igame",
     "gameloop"
 
   ];
 
-  var lower =
+  var h =
     hostname.toLowerCase();
 
   for (
@@ -701,7 +855,7 @@ function isPUBGTraffic(hostname) {
   ) {
 
     if (
-      lower.indexOf(
+      h.indexOf(
         keywords[i]
       ) !== -1
     ) {
@@ -715,7 +869,7 @@ function isPUBGTraffic(hostname) {
 
 
 // ============================================================
-// MATCH TRAFFIC
+// MATCH DETECTION
 // ============================================================
 
 function isMatchTraffic(
@@ -737,10 +891,7 @@ function isMatchTraffic(
     "realtime",
     "rt-",
     "sync",
-    "live",
     "arena",
-    "room",
-    "session",
     "pvp",
     "versus"
 
@@ -767,7 +918,7 @@ function isMatchTraffic(
 
 
 // ============================================================
-// LOBBY TRAFFIC
+// LOBBY DETECTION
 // ============================================================
 
 function isLobbyTraffic(
@@ -784,53 +935,25 @@ function isLobbyTraffic(
   var keywords = [
 
     "lobby",
-    "home",
-    "main",
-
     "matchmaking",
     "queue",
-    "mm-",
-
     "dispatch",
     "gateway",
     "portal",
-
     "join",
     "connect",
-    "recruit",
-
     "waiting",
     "ready",
-    "prepare",
-
     "room",
     "party",
     "team",
-
     "profile",
     "account",
-    "user",
-
-    "stats",
-    "history",
-
     "rank",
-    "achievement",
-
-    "settings",
-    "config",
-    "option",
-
-    "location",
     "region",
     "country",
-    "server",
     "zone",
-    "area",
-
-    "geo",
-    "timezone",
-    "locale"
+    "area"
 
   ];
 
@@ -855,7 +978,7 @@ function isLobbyTraffic(
 
 
 // ============================================================
-// VOICE TRAFFIC
+// VOICE
 // ============================================================
 
 function isVoiceTraffic(
@@ -877,12 +1000,8 @@ function isVoiceTraffic(
     "webrtc",
     "agora",
     "voip",
-    "call",
-    "speak",
     "mic",
-    "sound",
-    "talk",
-    "chat"
+    "talk"
 
   ];
 
@@ -907,61 +1026,7 @@ function isVoiceTraffic(
 
 
 // ============================================================
-// SOCIAL TRAFFIC
-// ============================================================
-
-function isSocialTraffic(
-  url,
-  hostname
-) {
-
-  var combined =
-    (
-      url +
-      hostname
-    ).toLowerCase();
-
-  var keywords = [
-
-    "friend",
-    "social",
-    "squad",
-    "team",
-    "party",
-    "clan",
-    "guild",
-    "group",
-    "invite",
-    "presence",
-    "status",
-    "profile",
-    "message",
-    "notification"
-
-  ];
-
-  for (
-    var i = 0;
-    i < keywords.length;
-    i++
-  ) {
-
-    if (
-      combined.indexOf(
-        keywords[i]
-      ) !== -1
-    ) {
-
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-// ============================================================
-// CDN TRAFFIC
+// CDN
 // ============================================================
 
 function isCDNTraffic(
@@ -978,16 +1043,13 @@ function isCDNTraffic(
   var keywords = [
 
     "cdn",
-    "content",
     "asset",
-    "resource",
     "static",
     "media",
     "download",
     "patch",
     "update",
-    "file",
-    "data"
+    "resource"
 
   ];
 
@@ -1033,7 +1095,6 @@ function isAnalyticsTraffic(
     "metrics",
     "track",
     "beacon",
-    "report",
     "crash",
     "monitor"
 
@@ -1060,7 +1121,140 @@ function isAnalyticsTraffic(
 
 
 // ============================================================
-// MAIN PAC ROUTER
+// STICKY PROXY
+// ============================================================
+
+function getStickyProxy() {
+
+  if (
+    SESSION.proxyLocked &&
+    SESSION.activeProxy
+  ) {
+
+    return SESSION.activeProxy;
+  }
+
+
+  SESSION.activeProxy =
+    CONFIG.PRIMARY_PROXY;
+
+  SESSION.proxyLocked =
+    true;
+
+  SESSION.proxyStartTime =
+    new Date().getTime();
+
+
+  return SESSION.activeProxy;
+}
+
+
+// ============================================================
+// STICKY NETWORK
+// ============================================================
+
+function lockJordanNetwork(
+  network
+) {
+
+  if (!network) {
+    return;
+  }
+
+  if (
+    !SESSION.networkLocked
+  ) {
+
+    SESSION.networkLocked =
+      true;
+
+    SESSION.network =
+      network.cidr;
+
+    SESSION.networkName =
+      network.name;
+
+    SESSION.networkASN =
+      network.asn;
+
+    SESSION.networkPriority =
+      network.priority;
+
+    return;
+  }
+
+
+  /*
+   * لا نبدل الشبكة أثناء الجلسة
+   * إلا إذا كانت الشبكة الجديدة أعلى أولوية بشكل واضح.
+   */
+
+  if (
+    network.priority >
+    SESSION.networkPriority
+  ) {
+
+    SESSION.network =
+      network.cidr;
+
+    SESSION.networkName =
+      network.name;
+
+    SESSION.networkASN =
+      network.asn;
+
+    SESSION.networkPriority =
+      network.priority;
+  }
+}
+
+
+// ============================================================
+// SESSION RESET
+// ============================================================
+
+function resetSession() {
+
+  SESSION.proxyLocked =
+    false;
+
+  SESSION.activeProxy =
+    null;
+
+  SESSION.proxyStartTime =
+    0;
+
+  SESSION.networkLocked =
+    false;
+
+  SESSION.network =
+    null;
+
+  SESSION.networkName =
+    null;
+
+  SESSION.networkASN =
+    null;
+
+  SESSION.networkPriority =
+    0;
+
+  SESSION.matchLocked =
+    false;
+
+  SESSION.matchHostname =
+    null;
+
+  SESSION.matchNetwork =
+    null;
+
+  SESSION.matchStartTime =
+    0;
+}
+
+
+// ============================================================
+// MAIN ROUTER
 // ============================================================
 
 function FindProxyForURL(
@@ -1077,18 +1271,22 @@ function FindProxyForURL(
       host,
       "*.youtube.com"
     ) ||
+
     shExpMatch(
       host,
       "*.googlevideo.com"
     ) ||
+
     shExpMatch(
       host,
       "*.youtu.be"
     ) ||
+
     shExpMatch(
       host,
       "*.github.com"
     ) ||
+
     shExpMatch(
       host,
       "*.githubusercontent.com"
@@ -1117,7 +1315,7 @@ function FindProxyForURL(
     !isPUBGTraffic(host)
   ) {
 
-    SESSION.counters.directRequests++;
+    SESSION.counters.direct++;
 
     return CONFIG.DIRECT;
   }
@@ -1127,60 +1325,65 @@ function FindProxyForURL(
   // DNS
   // ----------------------------------------------------------
 
-  var ipAddress =
+  var ip =
     fastResolve(host);
 
 
-  if (!ipAddress) {
+  if (!ip) {
 
-    SESSION.counters.blockedRequests++;
+    SESSION.counters.blocked++;
 
     return CONFIG.BLOCK;
   }
 
 
   // ----------------------------------------------------------
-  // IP VERSION
+  // IPv4 / IPv6
   // ----------------------------------------------------------
 
   if (
-    ipAddress.indexOf(":") !== -1
+    ip.indexOf(":") !== -1
   ) {
 
-    SESSION.counters.ipv6Requests++;
+    SESSION.counters.ipv6++;
+
+    if (
+      !CONFIG.ENABLE_IPV6
+    ) {
+
+      return CONFIG.DIRECT;
+    }
 
   } else {
 
-    SESSION.counters.ipv4Requests++;
+    SESSION.counters.ipv4++;
   }
 
 
   // ----------------------------------------------------------
-  // JORDAN NETWORK IDENTIFICATION
+  // JORDAN IDENTIFICATION
   // ----------------------------------------------------------
 
-  var jordanNetwork =
-    findJordanNetwork(
-      ipAddress
+  var jordan =
+    findJordanNetwork(ip);
+
+
+  if (jordan) {
+
+    SESSION.counters.jordan++;
+
+    lockJordanNetwork(
+      jordan
     );
-
-
-  // ----------------------------------------------------------
-  // JORDAN TRAFFIC
-  // ----------------------------------------------------------
-
-  if (jordanNetwork) {
-
-    SESSION.counters.jordanRequests++;
 
   } else {
 
-    SESSION.counters.nonJordanRequests++;
+    SESSION.counters.global++;
   }
 
 
   // ==========================================================
-  // MATCH TRAFFIC
+  // MATCH
   // ==========================================================
 
   if (
@@ -1190,113 +1393,54 @@ function FindProxyForURL(
     )
   ) {
 
-    SESSION.counters.matchRequests++;
+    SESSION.counters.match++;
 
 
     // --------------------------------------------------------
-    // Jordan match endpoint
+    // Jordan endpoint
     // --------------------------------------------------------
 
-    if (jordanNetwork) {
+    if (jordan) {
 
-      var networkName =
-        jordanNetwork.name;
-
-      var networkPriority =
-        jordanNetwork.priority;
-
-
-      // First match request
       if (
-        !SESSION.match.locked
+        !SESSION.matchLocked
       ) {
 
-        SESSION.match.network =
-          jordanNetwork.cidr;
-
-        SESSION.match.networkName =
-          networkName;
-
-        SESSION.match.networkPriority =
-          networkPriority;
-
-        SESSION.match.hostname =
-          host;
-
-        SESSION.match.proxy =
-          CONFIG.MATCH_TIER1;
-
-        SESSION.match.startTime =
-          new Date().getTime();
-
-        SESSION.match.locked =
+        SESSION.matchLocked =
           true;
 
+        SESSION.matchHostname =
+          host;
 
-        return (
-          CONFIG.MATCH_TIER1 +
-          "; " +
-          CONFIG.LOBBY_FAST[0]
-        );
+        SESSION.matchNetwork =
+          jordan.cidr;
+
+        SESSION.matchStartTime =
+          new Date().getTime();
       }
 
 
-      // Same network
-      if (
-        jordanNetwork.cidr ===
-        SESSION.match.network
-      ) {
+      /*
+       * أهم نقطة في Anti-Jitter:
+       *
+       * نفس البروكسي طوال الجلسة.
+       * لا rotation.
+       * لا hash.
+       * لا تبديل بين ثلاثة مسارات.
+       */
 
-        return (
-          SESSION.match.proxy +
-          "; " +
-          CONFIG.MATCH_TIER1
-        );
-      }
-
-
-      // Higher priority Jordan network
-      if (
-        jordanNetwork.priority >
-        SESSION.match.networkPriority
-      ) {
-
-        SESSION.match.network =
-          jordanNetwork.cidr;
-
-        SESSION.match.networkName =
-          jordanNetwork.name;
-
-        SESSION.match.networkPriority =
-          jordanNetwork.priority;
-
-        return (
-          CONFIG.MATCH_TIER1 +
-          "; " +
-          CONFIG.LOBBY_FAST[0]
-        );
-      }
-
-
-      return CONFIG.MATCH_TIER1;
+      return getStickyProxy();
     }
 
 
     // --------------------------------------------------------
-    // Non-Jordan match endpoint
+    // Global endpoint
     // --------------------------------------------------------
 
     /*
-     * لا نحاول تحويل كل سيرفر عالمي إلى الأردن
-     * لأن ذلك قد يكسر الاتصال بالمباراة.
+     * لا نحاول إجبار سيرفر عالمي على IP أردني.
+     * هذا قد يؤدي إلى فشل الاتصال.
      */
-
-    if (
-      CONFIG.JORDAN_ONLY_PRIORITY
-    ) {
-
-      return CONFIG.DIRECT;
-    }
 
     return CONFIG.DIRECT;
   }
@@ -1313,13 +1457,9 @@ function FindProxyForURL(
     )
   ) {
 
-    if (jordanNetwork) {
+    if (jordan) {
 
-      return (
-        CONFIG.VOICE_PROXY +
-        "; " +
-        CONFIG.MATCH_TIER1
-      );
+      return getStickyProxy();
     }
 
     return CONFIG.DIRECT;
@@ -1327,16 +1467,16 @@ function FindProxyForURL(
 
 
   // ==========================================================
-  // ACTIVE MATCH SESSION
+  // ACTIVE MATCH
   // ==========================================================
 
   if (
-    SESSION.match.locked
+    SESSION.matchLocked
   ) {
 
     var elapsed =
       new Date().getTime() -
-      SESSION.match.startTime;
+      SESSION.matchStartTime;
 
 
     if (
@@ -1344,6 +1484,7 @@ function FindProxyForURL(
       CONFIG.STICKY_SESSION_TIME
     ) {
 
+      // CDN لا يحتاج proxy
       if (
         isCDNTraffic(
           url,
@@ -1351,10 +1492,11 @@ function FindProxyForURL(
         )
       ) {
 
-        return CONFIG.CDN_DIRECT;
+        return CONFIG.DIRECT;
       }
 
 
+      // Analytics لا نحتاج أن نمرره بالبروكسي
       if (
         isAnalyticsTraffic(
           url,
@@ -1364,31 +1506,27 @@ function FindProxyForURL(
 
         return CONFIG.DIRECT;
       }
+
+
+      // Jordan PUBG traffic
+      if (jordan) {
+
+        return getStickyProxy();
+      }
+
+
+      // Global required service
+      if (
+        CONFIG.ALLOW_GLOBAL_SERVICES
+      ) {
+
+        return CONFIG.DIRECT;
+      }
     }
 
 
     // Session expired
-
-    SESSION.match.locked =
-      false;
-
-    SESSION.match.network =
-      null;
-
-    SESSION.match.networkName =
-      null;
-
-    SESSION.match.networkPriority =
-      0;
-
-    SESSION.match.hostname =
-      null;
-
-    SESSION.match.proxy =
-      null;
-
-    SESSION.match.startTime =
-      0;
+    resetSession();
   }
 
 
@@ -1403,59 +1541,19 @@ function FindProxyForURL(
     )
   ) {
 
-    SESSION.counters.lobbyRequests++;
+    SESSION.counters.lobby++;
 
 
-    if (jordanNetwork) {
+    if (jordan) {
 
-      var lobbyProxy =
-        selectLobbyProxy(
-          host,
-          ipAddress
-        );
-
-
-      return (
-        lobbyProxy +
-        "; " +
-        CONFIG.LOBBY_FAST[0] +
-        "; " +
-        CONFIG.MATCH_TIER1
-      );
+      return getStickyProxy();
     }
 
 
     /*
-     * الخدمات العالمية المطلوبة للوبي
-     * تبقى DIRECT بدل كسر matchmaking.
+     * عدم إجبار خدمات matchmaking العالمية
+     * على Proxy أردني.
      */
-
-    return CONFIG.DIRECT;
-  }
-
-
-  // ==========================================================
-  // SOCIAL
-  // ==========================================================
-
-  if (
-    isSocialTraffic(
-      url,
-      host
-    )
-  ) {
-
-    if (jordanNetwork) {
-
-      return (
-        selectLobbyProxy(
-          host,
-          ipAddress
-        ) +
-        "; " +
-        CONFIG.LOBBY_FAST[0]
-      );
-    }
 
     return CONFIG.DIRECT;
   }
@@ -1472,7 +1570,7 @@ function FindProxyForURL(
     )
   ) {
 
-    return CONFIG.CDN_DIRECT;
+    return CONFIG.DIRECT;
   }
 
 
@@ -1487,33 +1585,24 @@ function FindProxyForURL(
     )
   ) {
 
-    SESSION.counters.directRequests++;
+    SESSION.counters.direct++;
 
     return CONFIG.DIRECT;
   }
 
 
   // ==========================================================
-  // GENERAL PUBG JORDAN TRAFFIC
+  // GENERAL JORDAN PUBG TRAFFIC
   // ==========================================================
 
-  if (jordanNetwork) {
+  if (jordan) {
 
-    return (
-      selectLobbyProxy(
-        host,
-        ipAddress
-      ) +
-      "; " +
-      CONFIG.LOBBY_FAST[0] +
-      "; " +
-      CONFIG.DIRECT
-    );
+    return getStickyProxy();
   }
 
 
   // ==========================================================
-  // DEFAULT
+  // GLOBAL PUBG TRAFFIC
   // ==========================================================
 
   return CONFIG.DIRECT;
@@ -1521,78 +1610,67 @@ function FindProxyForURL(
 
 
 // ============================================================
-// SESSION RESET
-// ============================================================
-
-function resetSession() {
-
-  SESSION.match.locked =
-    false;
-
-  SESSION.match.network =
-    null;
-
-  SESSION.match.networkName =
-    null;
-
-  SESSION.match.networkPriority =
-    0;
-
-  SESSION.match.hostname =
-    null;
-
-  SESSION.match.proxy =
-    null;
-
-  SESSION.match.startTime =
-    0;
-}
-
-
-// ============================================================
-// DEBUG / STATS
+// DEBUG STATS
 // ============================================================
 
 function getSessionStats() {
 
   return {
 
+    activeProxy:
+      SESSION.activeProxy,
+
+    proxyLocked:
+      SESSION.proxyLocked,
+
+    network:
+      SESSION.network,
+
+    networkName:
+      SESSION.networkName,
+
+    networkASN:
+      SESSION.networkASN,
+
+    networkPriority:
+      SESSION.networkPriority,
+
+    matchLocked:
+      SESSION.matchLocked,
+
+    matchNetwork:
+      SESSION.matchNetwork,
+
+    matchHostname:
+      SESSION.matchHostname,
+
     matchRequests:
-      SESSION.counters.matchRequests,
+      SESSION.counters.match,
 
     lobbyRequests:
-      SESSION.counters.lobbyRequests,
+      SESSION.counters.lobby,
 
     jordanRequests:
-      SESSION.counters.jordanRequests,
+      SESSION.counters.jordan,
 
-    nonJordanRequests:
-      SESSION.counters.nonJordanRequests,
-
-    blockedRequests:
-      SESSION.counters.blockedRequests,
-
-    directRequests:
-      SESSION.counters.directRequests,
+    globalRequests:
+      SESSION.counters.global,
 
     ipv4Requests:
-      SESSION.counters.ipv4Requests,
+      SESSION.counters.ipv4,
 
     ipv6Requests:
-      SESSION.counters.ipv6Requests,
+      SESSION.counters.ipv6,
+
+    directRequests:
+      SESSION.counters.direct,
+
+    blockedRequests:
+      SESSION.counters.blocked,
 
     dnsCacheSize:
       Object.keys(
         SESSION.dns
-      ).length,
-
-    matchLocked:
-      SESSION.match.locked,
-
-    matchNetwork:
-      SESSION.match.network,
-
-    matchNetworkName:
-      SESSION.match.networkName
+      ).length
   };
 }
